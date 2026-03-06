@@ -81,21 +81,3 @@ library(tidyr)
 # Die Fälle mit fehlenden Werten ausschliessen
 df <- df %>%
   drop_na()
-
-
-# 1. Ursprüngliche Zielvariable 'num' entfernen, um "Data Leakage" zu verhindern
-df_modell <- df %>% select(-num)
-
-# 2. Datensplit (70% Training, 30% Test)
-set.seed(42) # Setzt einen Startwert, damit das zufällige Aufteilen reproduzierbar bleibt
-
-# Wir ziehen zufällig 70% der Zeilennummern
-train_index <- sample(seq_len(nrow(df_modell)), size = 0.7 * nrow(df_modell))
-
-# Datensätze aufteilen
-train_data <- df_modell[train_index, ]
-test_data  <- df_modell[-train_index, ]
-
-# Kurze Kontrolle der Aufteilung
-nrow(train_data)
-nrow(test_data)
