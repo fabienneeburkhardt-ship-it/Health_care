@@ -1,6 +1,6 @@
-install.packages("ucimlrepo")   # Datensatz direkt laden
-install.packages("tidyverse")   # ggplot2, dplyr, etc.
-install.packages("corrplot")    # Korrelationsmatrix
+# install.packages("ucimlrepo")   # Datensatz direkt laden
+# install.packages("tidyverse")   # ggplot2, dplyr, etc.
+# install.packages("corrplot")    # Korrelationsmatrix
 
 library(ucimlrepo)
 library(dplyr)
@@ -75,6 +75,9 @@ corrplot(cor(df_num, use = "complete.obs"),
 # Als CSV im data/-Ordner speichern
 write.csv(df, "data/heart_disease_clean.csv", row.names = FALSE)
 
-#hallo
-#velo
+# Paket laden 
+library(tidyr)
 
+# Die Fälle mit fehlenden Werten ausschliessen
+df <- df %>%
+  drop_na()
