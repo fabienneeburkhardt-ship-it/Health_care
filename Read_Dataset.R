@@ -1,6 +1,6 @@
-install.packages("ucimlrepo")   # Datensatz direkt laden
-install.packages("tidyverse")   # ggplot2, dplyr, etc.
-install.packages("corrplot")    # Korrelationsmatrix
+# install.packages("ucimlrepo")   # Datensatz direkt laden
+# install.packages("tidyverse")   # ggplot2, dplyr, etc.
+# install.packages("corrplot")    # Korrelationsmatrix
 
 library(ucimlrepo)
 library(dplyr)
