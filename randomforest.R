@@ -2,25 +2,27 @@
 library(randomForest)
 library(caret)
 
-# 1. Gleiche Cross-Validation Einstellungen wie bei der Regression
+# 1. Clean the dataset by removing rows with missing values
+# This prevents the na.fail.default error!
+df_modell_clean <- na.omit(df_modell)
+
+# 2. Gleiche Cross-Validation Einstellungen wie bei der Regression
 train_kontrolle <- trainControl(method = "cv", number = 10)
 
-# 2. Random Forest trainieren
-# Wir setzen einen "Seed", damit der Zufall reproduzierbar bleibt
+# 3. Random Forest trainieren
 set.seed(42) 
 
-# Wir nutzen "target ~ .", um dem Wald ALLE 13 Variablen zur Verfügung zu stellen.
-# Er sucht sich selbst die besten heraus!
+# Notice we are using df_modell_clean here now
 rf_modell <- train(
   target ~ ., 
-  data = df_modell, 
+  data = df_modell_clean, 
   method = "rf", 
   trControl = train_kontrolle,
-  importance = TRUE # Wichtig, um später zu sehen, welche Variablen am nützlichsten waren
+  importance = TRUE 
 )
 
-# 3. Ergebnisse anzeigen
+# 4. Ergebnisse anzeigen
 print(rf_modell)
 
-# 4. Die wichtigsten Variablen des Random Forests anzeigen lassen (Feature Importance)
+# 5. Die wichtigsten Variablen des Random Forests anzeigen lassen (Feature Importance)
 plot(varImp(rf_modell), main = "Wichtigste Variablen im Random Forest")
