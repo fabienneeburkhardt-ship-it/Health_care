@@ -1,9 +1,10 @@
-install.packages("ucimlrepo")   # Datensatz direkt laden
-install.packages("tidyverse")   # ggplot2, dplyr, etc.
-install.packages("corrplot")    # Korrelationsmatrix
+# install.packages("ucimlrepo")   # Datensatz direkt laden
+# install.packages("tidyverse")   # ggplot2, dplyr, etc.
+# install.packages("corrplot")    # Korrelationsmatrix
 
 library(ucimlrepo)
 library(dplyr)
+
 
 # Datensatz direkt vom UCI Repository laden (ID = 45)
 heart_disease <- fetch_ucirepo(id = 45)
@@ -76,6 +77,3 @@ corrplot(cor(df_num, use = "complete.obs"),
 write.csv(df, "data/heart_disease_clean.csv", row.names = FALSE)
 
 #hallo
-#velo
-#fabi i love you
-
