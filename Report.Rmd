@@ -29,30 +29,26 @@ library(randomForest)
 
 # Einleitung & Forschungsfrage
 
-[**Hier beschreibt ihr:**]
-[1. Dass ischämische Herzkrankheiten laut WHO weltweit die häufigste Todesursache sind.]
-[2. Was eine koronare Herzkrankheit (KHK) ist und warum Früherkennung so wichtig ist.]
-[3. Eure Forschungsfrage: "Mit welcher diagnostischen Genauigkeit lässt sich das Vorliegen einer KHK durch physiologische Parameter vorhersagen?"]
-[4. Den medizinischen Use Case: Dass ihr am Ende ein Triage-Tool (Gatekeeper) für die Hausarztpraxis entwickeln wollt, das invasive Tests vermeidet.]
+[**Hier beschreibt ihr:**] [1. Dass ischämische Herzkrankheiten laut WHO weltweit die häufigste Todesursache sind.] [2. Was eine koronare Herzkrankheit (KHK) ist und warum Früherkennung so wichtig ist.] [3. Eure Forschungsfrage: "Mit welcher diagnostischen Genauigkeit lässt sich das Vorliegen einer KHK durch physiologische Parameter vorhersagen?"] [4. Den medizinischen Use Case: Dass ihr am Ende ein Triage-Tool (Gatekeeper) für die Hausarztpraxis entwickeln wollt, das invasive Tests vermeidet.]
 
 # Datengrundlage & Datenaufbereitung (Preprocessing)
 
-[**Hier beschreibt ihr:**]
-[Dass ihr den Cleveland Heart Disease Datensatz (n=303) nutzt. Erklärt kurz, dass 6 Fälle wegen fehlender Werte ausgeschlossen wurden. Erklärt methodisch, warum ihr die Zielvariable `num` binarisiert habt (0 = gesund, 1-4 = krank), um ein robustes Modell trotz der geringen Stichprobengrösse schätzen zu können.]
+[**Hier beschreibt ihr:**] [Dass ihr den Cleveland Heart Disease Datensatz (n=303) nutzt. Erklärt kurz, dass 6 Fälle wegen fehlender Werte ausgeschlossen wurden. Erklärt methodisch, warum ihr die Zielvariable `num` binarisiert habt (0 = gesund, 1-4 = krank), um ein robustes Modell trotz der geringen Stichprobengrösse schätzen zu können.]
 
 ## Der Cleveland-Datensatz
+
 ### Variablenübersicht (Codebook)
 
 Der verwendete Cleveland-Datensatz umfasst nach der Bereinigung 14 klinisch relevante Attribute. Die folgende Tabelle bietet eine Übersicht über die verwendeten physiologischen Parameter, deren Bedeutung sowie ihre Ausprägungen:
 
 | Variable | Beschreibung | Ausprägungen / Datentyp |
-| :--- | :--- | :--- |
+|:-----------------------|:-----------------------|:-----------------------|
 | **`age`** | Alter der Patienten | Kontinuierlich (in Jahren) |
 | **`sex`** | Geschlecht | Binär (1 = Männlich, 0 = Weiblich) |
 | **`cp`** | Brustschmerztyp (*Chest Pain*) | Kategorial (1 = typische Angina, 2 = atypische Angina, 3 = nicht-anginöser Schmerz, 4 = asymptomatisch) |
 | **`trestbps`** | Ruheblutdruck bei Klinikaufnahme | Kontinuierlich (in mm Hg) |
 | **`chol`** | Serumcholesterin | Kontinuierlich (in mg/dl) |
-| **`fbs`** | Nüchternblutzucker > 120 mg/dl | Binär (1 = Ja, 0 = Nein) |
+| **`fbs`** | Nüchternblutzucker \> 120 mg/dl | Binär (1 = Ja, 0 = Nein) |
 | **`restecg`** | Ruhe-EKG-Ergebnisse | Kategorial (0 = normal, 1 = ST-T-Wellen-Anomalie, 2 = wahrscheinliche/definitive Linksherzhypertrophie) |
 | **`thalach`** | Maximal erreichte Herzfrequenz | Kontinuierlich (Schläge pro Minute) |
 | **`exang`** | Belastungsinduzierte Angina pectoris | Binär (1 = Ja, 0 = Nein) |
@@ -70,8 +66,7 @@ Der verwendete Cleveland-Datensatz umfasst nach der Bereinigung 14 klinisch rele
 
 # Explorative Datenanalyse (EDA)
 
-[**Hier beschreibt ihr:**]
-[Dass eine visuelle und statistische Überprüfung der Daten stattgefunden hat. Erwähnt die Ergebnisse der Chi-Quadrat-Tests (Brustschmerztyp ist hochsignifikant) und der ANOVA (Mittelwerte von Alter und Maximalpuls unterscheiden sich bei Gesunden und Kranken signifikant). Weist auf die Korrelationsmatrix hin, um Multikollinearität zu prüfen.]
+[**Hier beschreibt ihr:**] [Dass eine visuelle und statistische Überprüfung der Daten stattgefunden hat. Erwähnt die Ergebnisse der Chi-Quadrat-Tests (Brustschmerztyp ist hochsignifikant) und der ANOVA (Mittelwerte von Alter und Maximalpuls unterscheiden sich bei Gesunden und Kranken signifikant). Weist auf die Korrelationsmatrix hin, um Multikollinearität zu prüfen.]
 
 ## Visuelle Analyse
 
@@ -87,8 +82,7 @@ Ergebnisse der ANOVA und Chi-Quadrat-Tests sowie die Korrelationsmatrix.
 
 # Statistische Modellierung
 
-[**Hier beschreibt ihr:**]
-[Wie ihr die Daten in 70% Training und 30% Test aufgeteilt habt. Beschreibt das volle logistische Regressionsmodell und wie ihr durch die Rückwärts-Selektion (`step()`) das optimierte Modell gefunden habt. Geht auf das "Alters-Paradoxon" ein: Das Alter war in der EDA isoliert betrachtet signifikant, flog aber bei der Modelloptimierung raus, da es zusammen mit anderen Variaäblen (Blutdruck etc.) keinen statistischen Mehrwert mehr bot.]
+[**Hier beschreibt ihr:**] [Wie ihr die Daten in 70% Training und 30% Test aufgeteilt habt. Beschreibt das volle logistische Regressionsmodell und wie ihr durch die Rückwärts-Selektion (`step()`) das optimierte Modell gefunden habt. Geht auf das "Alters-Paradoxon" ein: Das Alter war in der EDA isoliert betrachtet signifikant, flog aber bei der Modelloptimierung raus, da es zusammen mit anderen Variaäblen (Blutdruck etc.) keinen statistischen Mehrwert mehr bot.]
 
 ## Basismodell: Logistische Regression
 
@@ -100,8 +94,7 @@ Erklärung des "Alters-Paradoxons" (warum Alter in der EDA wichtig war, aber hie
 
 # Modellevaluation & Machine-Learning-Vergleich
 
-[**Hier beschreibt ihr:**]
-[Die Ergebnisse eures Modells. Zuerst die Genauigkeit am Testdatensatz (Konfusionsmatrix) und den exzellenten AUC-Wert. Danach erklärt ihr die 10-fache Kreuzvalidierung, um zu beweisen, dass eure Genauigkeit kein Zufall war. Zum Schluss kommt der Vergleich mit dem Random Forest: Zieht das Fazit, dass euer interpretiertes White-Box-Modell (Log. Reg) hier sogar den Black-Box-Algorithmus schlägt!]
+[**Hier beschreibt ihr:**] [Die Ergebnisse eures Modells. Zuerst die Genauigkeit am Testdatensatz (Konfusionsmatrix) und den exzellenten AUC-Wert. Danach erklärt ihr die 10-fache Kreuzvalidierung, um zu beweisen, dass eure Genauigkeit kein Zufall war. Zum Schluss kommt der Vergleich mit dem Random Forest: Zieht das Fazit, dass euer interpretiertes White-Box-Modell (Log. Reg) hier sogar den Black-Box-Algorithmus schlägt!]
 
 ## Kreuzvalidierung (10-Fold Cross-Validation)
 
@@ -115,8 +108,7 @@ Fazit: Warum das White-Box-Modell (Log. Regression) hier gewinnt.
 
 # Transfer in die klinische Praxis: Das Screening-Modell
 
-[**Hier beschreibt ihr das Highlight eurer Arbeit:**]
-[Das statistisch beste Modell braucht invasive, teure Spital-Tests (Röntgen, Angiographie). Für die Hausarztpraxis ist das unrealistisch. Daher habt ihr ein Screening-Modell aus nur 6 non-invasiven Basisparametern gebaut. Erklärt die Anpassung an die ESC-Guidelines (European Society of Cardiology), bei der die Patienten anhand ihrer Pre-Test Probability in die 3 Triage-Pfade (Rule-out, Bildgebung, Rule-in) eingeteilt werden.]
+[**Hier beschreibt ihr das Highlight eurer Arbeit:**] [Das statistisch beste Modell braucht invasive, teure Spital-Tests (Röntgen, Angiographie). Für die Hausarztpraxis ist das unrealistisch. Daher habt ihr ein Screening-Modell aus nur 6 non-invasiven Basisparametern gebaut. Erklärt die Anpassung an die ESC-Guidelines (European Society of Cardiology), bei der die Patienten anhand ihrer Pre-Test Probability in die 3 Triage-Pfade (Rule-out, Bildgebung, Rule-in) eingeteilt werden.]
 
 ## Problemstellung: Invasive vs. Non-invasive Tests
 
@@ -136,8 +128,56 @@ Anwendung der Leitlinien der European Society of Cardiology (Rule-out, Bildgebun
 
 # Interaktive Diagnose-Applikation (R-Shiny)
 
-[**Hier beschreibt ihr:**]
-[Dass ihr das Screening-Modell aus Kapitel 6 in eine klickbare R-Shiny App überführt habt, die als Clinical Decision Support System (CDSS) fungiert. Der Code unten ist für die Dokumentation beigefügt und kann als separates `app.R` Skript ausgeführt werden.]
+[**Hier beschreibt ihr:**] [Dass ihr das Screening-Modell aus Kapitel 6 in eine klickbare R-Shiny App überführt habt, die als Clinical Decision Support System (CDSS) fungiert. Der Code unten ist für die Dokumentation beigefügt und kann als separates `app.R` Skript ausgeführt werden.]
+
+```{r app, include=FALSE, echo = TRUE, warning = FALSE, message = FALSE, eval=FALSE}
+# HINWEIS: Dieser Code wird beim Erstellen des Dokuments nicht ausgeführt (eval=FALSE).
+# Kopiert ihn in ein separates R-Skript, um die App zu starten!
+
+library(shiny)
+
+# Wir nutzen das modell_screening, das zuvor im Environment trainiert wurde!
+ui <- fluidPage(
+  titlePanel("KHK-Screening-Tool (Hausarzt-Triage)"),
+  sidebarLayout(
+    sidebarPanel(
+      numericInput("age", "Alter:", value = 50, min = 20, max = 100),
+      selectInput("sex", "Geschlecht:", choices = list("Weiblich" = 0, "Männlich" = 1)),
+      sliderInput("cp", "Brustschmerztyp (1-4):", min = 1, max = 4, value = 1),
+      sliderInput("trestbps", "Ruheblutdruck:", min = 90, max = 200, value = 120),
+      sliderInput("chol", "Cholesterin:", min = 100, max = 400, value = 200),
+      selectInput("fbs", "Blutzucker > 120:", choices = list("Nein" = 0, "Ja" = 1))
+    ),
+    mainPanel(
+      h3("Ergebnis nach ESC-Guidelines"),
+      h4("Pre-Test Probability (PTP):"),
+      verbatimTextOutput("prob_out"),
+      h4("Triage-Empfehlung:"),
+      verbatimTextOutput("triage_out")
+    )
+  )
+)
+
+server <- function(input, output) {
+  vorhersage <- reactive({
+    neuer_patient <- data.frame(
+      age = input$age, sex = as.numeric(input$sex), cp = input$cp,
+      trestbps = input$trestbps, chol = input$chol, fbs = as.numeric(input$fbs)
+    )
+    predict(modell_screening, newdata = neuer_patient, type = "response")
+  })
+  
+  output$prob_out <- renderText({ paste0(round(vorhersage() * 100, 1), " %") })
+  
+  output$triage_out <- renderText({
+    p <- vorhersage()
+    if(p < 0.15) return("NIEDRIGES RISIKO: Keine weiteren Tests nötig.")
+    if(p <= 0.85) return("MITTLERES RISIKO: Überweisung für nicht-invasive Bildgebung (z.B. Echo/MRI).")
+    return("HOHES RISIKO: Direkte Überweisung zur invasiven Koronarangiographie.")
+  })
+}
+shinyApp(ui, server)
+```
 
 ## Prototyp des Clinical Decision Support Systems
 
@@ -145,8 +185,11 @@ Screenshot und kurze Erklärung eurer Shiny-App (Der R-Code der App wird normale
 
 # Diskussion & Fazit
 
-[**Hier beschreibt ihr:**]
-[Eure abschliessende Zusammenfassung. Zählt auf, dass das Modell extrem stark performt hat, ihr methodisch sauber vorgegangen seid (Cross-Validation) und am Ende sogar ein praxistaugliches, leitlinienkonformes Produkt entwickelt habt. Geht kurz auf Schwächen ein (Datensatz von 1989, relativ wenige Patienten) und wie man das in Zukunft verbessern könnte (z.B. mit modernen, grösseren Krankenhausdaten).]
+[**Hier beschreibt ihr:**] [Eure abschliessende Zusammenfassung. Zählt auf, dass das Modell extrem stark performt hat, ihr methodisch sauber vorgegangen seid (Cross-Validation) und am Ende sogar ein praxistaugliches, leitlinienkonformes Produkt entwickelt habt. Geht kurz auf Schwächen ein (Datensatz von 1989, relativ wenige Patienten) und wie man das in Zukunft verbessern könnte (z.B. mit modernen, grösseren Krankenhausdaten).]
+
+**Zweistufiges Screening und Limitierungen des Datensatzes**
+Bei der kritischen Betrachtung des entwickelten Screening-Modells fällt auf, dass Parameter wie Serumcholesterin (`chol`) und Nüchternblutzucker (`fbs`) weiterhin eine (wenn auch minimalinvasive) Blutentnahme erfordern. Da der historische Cleveland-Datensatz keine moderneren und spezifischeren Blutbiomarker (wie LDL-Cholesterin, hs-CRP oder Troponin) enthält, konnte das Modell nicht durch präzisere Laborwerte angereichert werden.
+Für zukünftige Entwicklungen im Bereich der klinischen Entscheidungsunterstützung (CDSS) wäre ein **zweistufiges Kaskaden-Modell** denkbar: Stufe 1 berechnet das Risiko rein non-invasiv (Alter, Geschlecht, Blutdruck, Symptome) für eine sofortige Triage im Sprechzimmer. Nur bei unklarem Ergebnis in Stufe 1 wird Stufe 2 (inklusive Point-of-Care-Blutwerten) ausgelöst. Dies würde die Kosteneffizienz und Geschwindigkeit in der Hausarztpraxis weiter optimieren.
 
 ## Zusammenfassung der Ergebnisse
 
