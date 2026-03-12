@@ -17,4 +17,4 @@ cv_modell <- train(
 )
 
 # --- 3. Ergebnisse der Kreuzvalidierung anzeigen ---
-print(cv_modell)
+print(cv_modell)k
