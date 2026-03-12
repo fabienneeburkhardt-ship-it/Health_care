@@ -1,5 +1,112 @@
 ---
-title: "Report"
-output: html_document
+title: "Prädiktion der koronaren Herzkrankheit (KHK)"
+subtitle: "Statistische Modellierung und Entwicklung eines Screening-Tools"
+author: "Eure Namen / Gruppenname"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    number_sections: true
+    theme: flatly
 ---
 
+```{r setup, include=FALSE, echo = TRUE, warning = FALSE, message = FALSE}
+
+#alle benötigten Bibliotheken laden
+
+library(ucimlrepo)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(corrplot)
+library(caret)
+library(pROC)
+library(randomForest)
+
+```
+
+# Einleitung & Forschungsfrage
+
+Hier beschreibt ihr den Hintergrund (WHO-Daten) und eure erweiterte Forschungsfrage (inkl. dem Ziel, ein Triage-Tool für Hausärzte zu bauen).
+
+# Datengrundlage & Datenaufbereitung (Preprocessing)
+
+## Der Cleveland-Datensatz
+
+## Datenbereinigung und Binarisierung
+
+```{r Data_reader, include=FALSE, echo = TRUE, warning = FALSE, message = FALSE}
+#code für einlesen und binarisieren der Daten
+```
+
+# Explorative Datenanalyse (EDA)
+
+## Visuelle Analyse
+
+Hier kommen die Boxplots und Balkendiagramme hin.
+
+## Multikollinearität und Hypothesentests
+
+Ergebnisse der ANOVA und Chi-Quadrat-Tests sowie die Korrelationsmatrix.
+
+```{r EDA, include=FALSE, echo = TRUE, warning = FALSE, message = FALSE}
+# Code für ggplots und Hypothesentests
+```
+
+# Statistische Modellierung
+
+## Basismodell: Logistische Regression
+
+## Modelloptimierung (Rückwärts-Selektion)
+
+## Interpretation der signifikanten Prädiktoren
+
+Erklärung des "Alters-Paradoxons" (warum Alter in der EDA wichtig war, aber hier rausfliegt).
+
+# Modellevaluation & Machine-Learning-Vergleich
+
+## Kreuzvalidierung (10-Fold Cross-Validation)
+
+## Vergleich mit Random Forest
+
+Fazit: Warum das White-Box-Modell (Log. Regression) hier gewinnt.
+
+```{r xValidation, include=FALSE, echo = TRUE, warning = FALSE, message = FALSE}
+# Code für Cross-Validation und Random Forest
+```
+
+# Transfer in die klinische Praxis: Das Screening-Modell
+
+## Problemstellung: Invasive vs. Non-invasive Tests
+
+Warum das optimierte Modell für den Hausarzt unpraktisch ist (Röntgen/Kontrastmittel).
+
+## Das Hausarzt-Modell (Gatekeeper)
+
+Fokus auf die 6 leicht erhebbaren Basisparameter.
+
+## ESC-konforme Risikostratifizierung (Triage)
+
+Anwendung der Leitlinien der European Society of Cardiology (Rule-out, Bildgebung, Herzkatheter).
+
+```{r esc_modell, include=FALSE, echo = TRUE, warning = FALSE, message = FALSE}
+# Code für das 6-Variablen-Modell und die ESC-Triage-Tabelle
+```
+
+# Interaktive Diagnose-Applikation (R-Shiny)
+
+## Prototyp des Clinical Decision Support Systems
+
+Screenshot und kurze Erklärung eurer Shiny-App (Der R-Code der App wird normalerweise separat in einer app.R Datei gespeichert, ihr könnt ihn hier aber im Anhang zeigen).
+
+# Diskussion & Fazit
+
+## Zusammenfassung der Ergebnisse
+
+## Limitierungen der Arbeit
+
+(Z. B. geringe Stichprobengrösse, Alter des Datensatzes).
+
+## 

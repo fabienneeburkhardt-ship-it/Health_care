@@ -63,3 +63,22 @@ plot(roc_kurve, main = "ROC-Kurve für das KHK-Vorhersagemodell", col = "blue", 
 # AUC-Wert ausgeben
 auc_wert <- auc(roc_kurve)
 print(paste("Der AUC-Wert beträgt:", round(auc_wert, 3)))
+
+
+# --- Wir machen das Modell übervorsichtig ---
+
+# 1. Neuen, niedrigen Schwellenwert setzen (z. B. 20 % statt 50 %)
+neuer_cutoff <- 0.20
+
+# 2. Neue Vorhersagen basierend auf dem neuen Cut-off
+vorhersagen_sensibel <- ifelse(wahrscheinlichkeiten > neuer_cutoff, "1", "0")
+vorhersagen_sensibel_fakt <- factor(vorhersagen_sensibel, levels = levels(test_data$target))
+
+# 3. Neue Konfusionsmatrix berechnen
+matrix_sensibel <- confusionMatrix(data = vorhersagen_sensibel_fakt, 
+                                   reference = test_data$target, 
+                                   positive = "1")
+
+# 4. Nur die wichtigsten Metriken direkt ausgeben
+print(matrix_sensibel$byClass[c("Sensitivity", "Specificity")])
+print(paste("Genauigkeit (Accuracy):", round(matrix_sensibel$overall["Accuracy"], 3)))
