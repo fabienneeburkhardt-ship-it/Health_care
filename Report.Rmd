@@ -152,7 +152,7 @@ Hier kommen die Boxplots und Balkendiagramme hin.
 
 Ergebnisse der ANOVA und Chi-Quadrat-Tests sowie die Korrelationsmatrix.
 
-```{r EDA, include=FALSE, echo = TRUE, warning = FALSE, message = FALSE}
+```{r CHi2, include=FALSE, echo = TRUE, warning = FALSE, message = FALSE}
 # --- EDA: Chi-Quadrat-Tests ---
 
 # 1. Brustschmerztyp (cp) vs. Zielvariable (target)
@@ -167,6 +167,9 @@ tabelle_sex <- table(df$sex, df$target)
 test_sex <- chisq.test(tabelle_sex)
 print(test_sex)
 
+```
+
+```{r EDA_ANOVA, include=FALSE, echo = TRUE, warning = FALSE, message = FALSE}
 # --- EDA: Einseitige ANOVA ---
 
 # 1. Maximale Herzfrequenz (thalach) nach Zielvariable (target)
@@ -181,7 +184,10 @@ summary(anova_age)
 anova_trestbps <- aov(trestbps ~ target, data = df)
 summary(anova_trestbps)
 
+```
 
+hier hat es noch ein fehler drin
+```{r EDA_Plots, include=FALSE, echo = TRUE, warning = FALSE, message = FALSE}
 # --- 1. VISUELLE EDA: Kontinuierliche Variablen (Boxplots) ---
 # Wir wählen die wichtigsten numerischen Variablen und plotten sie in einem Grid
 plot_kontinuierlich <- df %>%
@@ -255,14 +261,90 @@ corrplot(korrelations_matrix,
          title = "Korrelationsmatrix der klinischen Parameter",
          mar = c(0,0,2,0))       # Rand anpassen, damit der Titel Platz hat
 ```
-
 # Statistische Modellierung
 
 [**Hier beschreibt ihr:**] [Wie ihr die Daten in 70% Training und 30% Test aufgeteilt habt. Beschreibt das volle logistische Regressionsmodell und wie ihr durch die Rückwärts-Selektion (`step()`) das optimierte Modell gefunden habt. Geht auf das "Alters-Paradoxon" ein: Das Alter war in der EDA isoliert betrachtet signifikant, flog aber bei der Modelloptimierung raus, da es zusammen mit anderen Variaäblen (Blutdruck etc.) keinen statistischen Mehrwert mehr bot.]
 
 ## Basismodell: Logistische Regression
 ```{r regression, include=FALSE, echo = TRUE, warning = FALSE, message = FALSE}
-# Code für Regression
+
+# 1. Ursprüngliche Zielvariable 'num' entfernen, um "Data Leakage" zu verhindern
+df_modell <- df %>% select(-num)
+
+# 2. Datensplit (70% Training, 30% Test)
+set.seed(42) # Setzt einen Startwert, damit das zufällige Aufteilen reproduzierbar bleibt
+
+# Wir ziehen zufällig 70% der Zeilennummern
+train_index <- sample(seq_len(nrow(df_modell)), size = 0.7 * nrow(df_modell))
+
+# Datensätze aufteilen
+train_data <- df_modell[train_index, ]
+test_data  <- df_modell[-train_index, ]
+
+# Kurze Kontrolle der Aufteilung
+nrow(train_data)
+nrow(test_data)
+
+# Logistische Regression mit allen Variablen
+modell_voll <- glm(target ~ ., data = train_data, family = "binomial")
+
+# Zusammenfassung anzeigen (hier siehst du die p-Werte der einzelnen Parameter)
+summary(modell_voll)
+
+# Automatische Rückwärts-Selektion durchführen
+modell_optimiert <- step(modell_voll, direction = "backward")
+
+# Das finale, bereinigte Modell ansehen
+summary(modell_optimiert)
+
+
+# --- 1. Vorhersagen generieren ---
+wahrscheinlichkeiten <- predict(modell_optimiert, newdata = test_data, type = "response")
+
+# --- 2. Schwellenwert anpassen (auf "1" und "0" statt Text) ---
+vorhersagen_klassen <- ifelse(wahrscheinlichkeiten > 0.5, "1", "0")
+
+# Vorhersagen in den exakt gleichen Faktor umwandeln wie die echten Daten
+vorhersagen_fakt <- factor(vorhersagen_klassen, levels = levels(test_data$target))
+
+# --- 3. Konfusionsmatrix berechnen ---
+# Hier sagen wir R nun, dass die "1" (und nicht das Wort "Herzleiden") unser positiver Fall ist
+konfusionsmatrix <- confusionMatrix(data = vorhersagen_fakt, 
+                                    reference = test_data$target, 
+                                    positive = "1")
+
+# Ausgabe der Ergebnisse
+print(konfusionsmatrix)
+
+
+# --- 4. ROC-Kurve und AUC berechnen ---
+roc_kurve <- roc(test_data$target, wahrscheinlichkeiten, levels = c("0", "1"))
+
+# Kurve plotten
+plot(roc_kurve, main = "ROC-Kurve für das KHK-Vorhersagemodell", col = "blue", lwd = 2)
+
+# AUC-Wert ausgeben
+auc_wert <- auc(roc_kurve)
+print(paste("Der AUC-Wert beträgt:", round(auc_wert, 3)))
+
+
+# --- Wir machen das Modell übervorsichtig ---
+
+# 1. Neuen, niedrigen Schwellenwert setzen (z. B. 20 % statt 50 %)
+neuer_cutoff <- 0.20
+
+# 2. Neue Vorhersagen basierend auf dem neuen Cut-off
+vorhersagen_sensibel <- ifelse(wahrscheinlichkeiten > neuer_cutoff, "1", "0")
+vorhersagen_sensibel_fakt <- factor(vorhersagen_sensibel, levels = levels(test_data$target))
+
+# 3. Neue Konfusionsmatrix berechnen
+matrix_sensibel <- confusionMatrix(data = vorhersagen_sensibel_fakt, 
+                                   reference = test_data$target, 
+                                   positive = "1")
+
+# 4. Nur die wichtigsten Metriken direkt ausgeben
+print(matrix_sensibel$byClass[c("Sensitivity", "Specificity")])
+print(paste("Genauigkeit (Accuracy):", round(matrix_sensibel$overall["Accuracy"], 3)))
 ```
 ## Modelloptimierung (Rückwärts-Selektion)
 
@@ -281,7 +363,41 @@ Erklärung des "Alters-Paradoxons" (warum Alter in der EDA wichtig war, aber hie
 Fazit: Warum das White-Box-Modell (Log. Regression) hier gewinnt.
 
 ```{r xValidation, include=FALSE, echo = TRUE, warning = FALSE, message = FALSE}
-# Code für Cross-Validation und Random Forest
+library(caret)
+
+# --- FIX: Daten absolut rigoros bereinigen ---
+# 1. Eventuelle Fragezeichen (aus dem UCI-Datensatz) in echte NAs umwandeln
+df_modell[df_modell == "?"] <- NA
+
+# 2. Alle Zeilen, die irgendwo ein NA haben, restlos löschen
+df_modell <- na.omit(df_modell)
+
+# 3. Variablen, die eventuell noch als "Character" feststecken, in Zahlen umwandeln
+# (Besonders 'ca' und 'thal' machen oft Probleme)
+df_modell$ca <- as.numeric(as.character(df_modell$ca))
+df_modell$thal <- as.numeric(as.character(df_modell$thal))
+
+# Noch einmal sicherheitshalber na.omit anwenden, falls beim Umwandeln neue NAs entstanden sind
+df_modell <- na.omit(df_modell)
+
+# Kurzer Check: Das MUSS "0" ausgeben!
+print(paste("Anzahl fehlender Werte jetzt:", sum(is.na(df_modell))))
+
+
+# --- 1. Einstellungen für die Cross-Validation festlegen ---
+train_kontrolle <- trainControl(method = "cv", number = 10)
+
+# --- 2. Das Modell mit Cross-Validation trainieren ---
+cv_modell <- train(
+  target ~ sex + cp + trestbps + fbs + thalach + exang + slope + ca + thal, 
+  data = df_modell, 
+  method = "glm", 
+  family = "binomial", 
+  trControl = train_kontrolle
+)
+
+# --- 3. Ergebnisse der Kreuzvalidierung anzeigen ---
+print(cv_modell)
 ```
 
 # Transfer in die klinische Praxis: Das Screening-Modell
@@ -361,12 +477,54 @@ ergebnisse <- data.frame(
 print("--- ERGEBNISSE NACH 100 SIMULATIONEN (ESC Rule-out bei 15%) ---")
 print(ergebnisse)
 ```
-```
 # Interaktive Diagnose-Applikation (R-Shiny)
 
 [**Hier beschreibt ihr:**] [Dass ihr das Screening-Modell aus Kapitel 6 in eine klickbare R-Shiny App überführt habt, die als Clinical Decision Support System (CDSS) fungiert. Der Code unten ist für die Dokumentation beigefügt und kann als separates `app.R` Skript ausgeführt werden.]
 
-```{r app, include=FALSE, echo = TRUE, warning = FALSE, message = FALSE, eval=FALSE}
+```{r shinyapp, include=FALSE, echo = TRUE, warning = FALSE, message = FALSE, eval=FALSE}
+
+# Wir nutzen das modell_screening, das zuvor im Environment trainiert wurde!
+ui <- fluidPage(
+  titlePanel("KHK-Screening-Tool (Hausarzt-Triage)"),
+  sidebarLayout(
+    sidebarPanel(
+      numericInput("age", "Alter:", value = 50, min = 20, max = 100),
+      selectInput("sex", "Geschlecht:", choices = list("Weiblich" = 0, "Männlich" = 1)),
+      sliderInput("cp", "Brustschmerztyp (1-4):", min = 1, max = 4, value = 1),
+      sliderInput("trestbps", "Ruheblutdruck:", min = 90, max = 200, value = 120),
+      sliderInput("chol", "Cholesterin:", min = 100, max = 400, value = 200),
+      selectInput("fbs", "Blutzucker > 120:", choices = list("Nein" = 0, "Ja" = 1))
+    ),
+    mainPanel(
+      h3("Ergebnis nach ESC-Guidelines"),
+      h4("Pre-Test Probability (PTP):"),
+      verbatimTextOutput("prob_out"),
+      h4("Triage-Empfehlung:"),
+      verbatimTextOutput("triage_out")
+    )
+  )
+)
+
+server <- function(input, output) {
+  vorhersage <- reactive({
+    neuer_patient <- data.frame(
+      age = input$age, sex = as.numeric(input$sex), cp = input$cp,
+      trestbps = input$trestbps, chol = input$chol, fbs = as.numeric(input$fbs)
+    )
+    predict(modell_screening, newdata = neuer_patient, type = "response")
+  })
+  
+  output$prob_out <- renderText({ paste0(round(vorhersage() * 100, 1), " %") })
+  
+  output$triage_out <- renderText({
+    p <- vorhersage()
+    if(p < 0.15) return("NIEDRIGES RISIKO: Keine weiteren Tests nötig.")
+    if(p <= 0.85) return("MITTLERES RISIKO: Überweisung für nicht-invasive Bildgebung (z.B. Echo/MRI).")
+    return("HOHES RISIKO: Direkte Überweisung zur invasiven Koronarangiographie.")
+  })
+}
+shinyApp(ui, server)
+
 # HINWEIS: Dieser Code wird beim Erstellen des Dokuments nicht ausgeführt (eval=FALSE).
 # Kopiert ihn in ein separates R-Skript, um die App zu starten!
 
