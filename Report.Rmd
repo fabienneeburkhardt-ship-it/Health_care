@@ -29,7 +29,11 @@ library(randomForest)
 
 # Einleitung & Forschungsfrage
 
-[**Hier beschreibt ihr:**] [1. Dass ischämische Herzkrankheiten laut WHO weltweit die häufigste Todesursache sind.] [2. Was eine koronare Herzkrankheit (KHK) ist und warum Früherkennung so wichtig ist.] [3. Eure Forschungsfrage: "Mit welcher diagnostischen Genauigkeit lässt sich das Vorliegen einer KHK durch physiologische Parameter vorhersagen?"] [4. Den medizinischen Use Case: Dass ihr am Ende ein Triage-Tool (Gatekeeper) für die Hausarztpraxis entwickeln wollt, das invasive Tests vermeidet.]
+[**Hier beschreibt ihr:**] 
+[1. Dass ischämische Herzkrankheiten laut WHO weltweit die häufigste Todesursache sind.] 
+[2. Was eine koronare Herzkrankheit (KHK) ist und warum Früherkennung so wichtig ist.] 
+[3. Eure Forschungsfrage: "Mit welcher diagnostischen Genauigkeit lässt sich das Vorliegen einer KHK durch physiologische Parameter vorhersagen?"] 
+[4. Den medizinischen Use Case: Dass ihr am Ende ein Triage-Tool (Gatekeeper) für die Hausarztpraxis entwickeln wollt, das invasive Tests vermeidet.]
 
 # Datengrundlage & Datenaufbereitung (Preprocessing)
 
@@ -62,6 +66,78 @@ Der verwendete Cleveland-Datensatz umfasst nach der Bereinigung 14 klinisch rele
 
 ```{r Data_reader, include=FALSE, echo = TRUE, warning = FALSE, message = FALSE}
 #code für einlesen und binarisieren der Daten
+# install.packages("ucimlrepo")   # Datensatz direkt laden
+# install.packages("tidyverse")   # ggplot2, dplyr, etc.
+# install.packages("corrplot")    # Korrelationsmatrix
+
+# Datensatz direkt vom UCI Repository laden (ID = 45)
+heart_disease <- fetch_ucirepo(id = 45)
+
+# Features (X) und Zielvariable (y) extrahieren
+X <- heart_disease$data$features
+y <- heart_disease$data$targets
+
+# Zu einem einzigen DataFrame zusammenführen
+df <- bind_cols(X, y)
+
+# Erste Zeilen ansehen
+head(df)
+dim(df)  # Erwartete Ausgabe: 920 Zeilen, 14 Spalten
+
+
+# Datentypen und fehlende Werte prüfen
+str(df)
+summary(df)
+
+# Fehlende Werte pro Spalte zählen
+colSums(is.na(df))
+
+# Zielvariable binarisieren: 0 = kein Herzleiden, 1 = Herzleiden
+df$target <- ifelse(df$num > 0, 1, 0)
+df$target <- as.factor(df$target)
+
+# Verteilung der Zielvariable
+table(df$target)
+
+
+# 1. Verteilung Herzleiden (Ja/Nein)
+ggplot(df, aes(x = target, fill = target)) +
+  geom_bar() +
+  labs(title = "Verteilung: Herzleiden", x = "Diagnose", y = "Anzahl Patienten") +
+  scale_x_discrete(labels = c("0" = "Kein Herzleiden", "1" = "Herzleiden")) +
+  theme_minimal()
+
+# 2. Altersverteilung nach Diagnose
+ggplot(df, aes(x = age, fill = target)) +
+  geom_histogram(bins = 20, alpha = 0.7, position = "identity") +
+  labs(title = "Altersverteilung nach Diagnose", x = "Alter", y = "Häufigkeit") +
+  theme_minimal()
+
+# 3. Maximale Herzfrequenz (thalach) nach Diagnose
+ggplot(df, aes(x = target, y = thalach, fill = target)) +
+  geom_boxplot() +
+  labs(title = "Max. Herzfrequenz nach Diagnose",
+       x = "Diagnose", y = "Max. Herzfrequenz (thalach)") +
+  scale_x_discrete(labels = c("0" = "Kein Herzleiden", "1" = "Herzleiden")) +
+  theme_minimal()
+
+
+# Nur numerische Spalten auswählen
+df_num <- df %>% select(where(is.numeric))
+
+# Korrelation berechnen und plotten
+corrplot(cor(df_num, use = "complete.obs"),
+         method = "color",
+         type   = "upper",
+         tl.cex = 0.8,
+         addCoef.col = "black",
+         number.cex = 0.6,
+         title = "Korrelationsmatrix – Heart Disease",
+         mar = c(0,0,1,0))
+
+# Als CSV im data/-Ordner speichern
+write.csv(df, "data/heart_disease_clean.csv", row.names = FALSE)
+
 ```
 
 # Explorative Datenanalyse (EDA)
@@ -77,7 +153,107 @@ Hier kommen die Boxplots und Balkendiagramme hin.
 Ergebnisse der ANOVA und Chi-Quadrat-Tests sowie die Korrelationsmatrix.
 
 ```{r EDA, include=FALSE, echo = TRUE, warning = FALSE, message = FALSE}
-# Code für ggplots und Hypothesentests
+# --- EDA: Chi-Quadrat-Tests ---
+
+# 1. Brustschmerztyp (cp) vs. Zielvariable (target)
+# Erstelle zuerst eine Kreuztabelle
+tabelle_cp <- table(df$cp, df$target)
+# Führe den Test aus
+test_cp <- chisq.test(tabelle_cp)
+print(test_cp)
+
+# 2. Geschlecht (sex) vs. Zielvariable (target)
+tabelle_sex <- table(df$sex, df$target)
+test_sex <- chisq.test(tabelle_sex)
+print(test_sex)
+
+# --- EDA: Einseitige ANOVA ---
+
+# 1. Maximale Herzfrequenz (thalach) nach Zielvariable (target)
+anova_thalach <- aov(thalach ~ target, data = df)
+summary(anova_thalach)
+
+# 2. Alter (age) nach Zielvariable (target)
+anova_age <- aov(age ~ target, data = df)
+summary(anova_age)
+
+# 3. Ruheblutdruck (trestbps) nach Zielvariable (target)
+anova_trestbps <- aov(trestbps ~ target, data = df)
+summary(anova_trestbps)
+
+
+# --- 1. VISUELLE EDA: Kontinuierliche Variablen (Boxplots) ---
+# Wir wählen die wichtigsten numerischen Variablen und plotten sie in einem Grid
+plot_kontinuierlich <- df %>%
+  select(target, age, thalach, trestbps, chol) %>%
+  pivot_longer(cols = -target, names_to = "Variable", values_to = "Wert") %>%
+  ggplot(aes(x = target, y = Wert, fill = target)) +
+  geom_boxplot(alpha = 0.7, outlier.colour = "red", outlier.shape = 16) +
+  facet_wrap(~ Variable, scales = "free_y") + # Erstellt für jede Variable ein eigenes Fenster
+  scale_fill_manual(values = c("0" = "#1b9e77", "1" = "#d95f02"), 
+                    labels = c("0" = "Gesund", "1" = "Krank")) +
+  theme_minimal() +
+  labs(title = "Verteilung kontinuierlicher Variablen nach KHK-Diagnose",
+       x = "Diagnose (0 = Gesund, 1 = Krank)",
+       y = "Gemessener Wert",
+       fill = "Status") +
+  theme(legend.position = "bottom")
+
+print(plot_kontinuierlich)
+
+
+# --- 2. VISUELLE EDA: Kategoriale Variablen (Gestapelte Balkendiagramme) ---
+
+# Plot für Brustschmerztyp (cp)
+plot_cp <- ggplot(df, aes(x = factor(cp), fill = target)) +
+  geom_bar(position = "fill", alpha = 0.8) + # "fill" macht es zu 100%-gestapelten Balken
+  scale_fill_manual(values = c("0" = "#1b9e77", "1" = "#d95f02"),
+                    labels = c("0" = "Gesund", "1" = "Krank")) +
+  theme_minimal() +
+  labs(title = "KHK-Anteil nach Brustschmerztyp (cp)",
+       x = "Brustschmerztyp (1 bis 4)",
+       y = "Prozentualer Anteil",
+       fill = "Status")
+
+print(plot_cp)
+
+# Plot für Geschlecht (sex)
+plot_sex <- ggplot(df, aes(x = factor(sex), fill = target)) +
+  geom_bar(position = "fill", alpha = 0.8) +
+  scale_fill_manual(values = c("0" = "#1b9e77", "1" = "#d95f02"),
+                    labels = c("0" = "Gesund", "1" = "Krank")) +
+  scale_x_discrete(labels = c("0" = "Weiblich", "1" = "Männlich")) +
+  theme_minimal() +
+  labs(title = "KHK-Anteil nach Geschlecht",
+       x = "Geschlecht",
+       y = "Prozentualer Anteil",
+       fill = "Status")
+
+print(plot_sex)
+
+
+# --- 3. VISUELLE EDA: Multikollinearität (Korrelationsmatrix) ---
+# Für die Korrelation dürfen wir nur reine Zahlen verwenden, keine Faktoren!
+df_numerisch <- df %>%
+  # Wandelt alle Spalten in numerische Werte um (auch unsere binarisierte target-Variable)
+  mutate(across(everything(), as.numeric)) 
+
+# Korrelationsmatrix berechnen
+korrelations_matrix <- cor(df_numerisch, use = "complete.obs")
+
+
+
+# Matrix plotten
+corrplot(korrelations_matrix, 
+         method = "color",       # Farben statt Kreise
+         type = "upper",         # Nur das obere Dreieck anzeigen (übersichtlicher)
+         addCoef.col = "black",  # Zahlenwerte in die Kästchen schreiben
+         number.cex = 0.6,       # Schriftgrösse der Zahlen
+         tl.col = "black",       # Schriftfarbe der Variablen-Namen
+         tl.srt = 45,            # Variablen-Namen um 45 Grad drehen
+         diag = FALSE,           # Die Diagonale (immer 1) ausblenden
+         title = "Korrelationsmatrix der klinischen Parameter",
+         mar = c(0,0,2,0))       # Rand anpassen, damit der Titel Platz hat
 ```
 
 # Statistische Modellierung
@@ -85,7 +261,9 @@ Ergebnisse der ANOVA und Chi-Quadrat-Tests sowie die Korrelationsmatrix.
 [**Hier beschreibt ihr:**] [Wie ihr die Daten in 70% Training und 30% Test aufgeteilt habt. Beschreibt das volle logistische Regressionsmodell und wie ihr durch die Rückwärts-Selektion (`step()`) das optimierte Modell gefunden habt. Geht auf das "Alters-Paradoxon" ein: Das Alter war in der EDA isoliert betrachtet signifikant, flog aber bei der Modelloptimierung raus, da es zusammen mit anderen Variaäblen (Blutdruck etc.) keinen statistischen Mehrwert mehr bot.]
 
 ## Basismodell: Logistische Regression
-
+```{r regression, include=FALSE, echo = TRUE, warning = FALSE, message = FALSE}
+# Code für Regression
+```
 ## Modelloptimierung (Rückwärts-Selektion)
 
 ## Interpretation der signifikanten Prädiktoren
@@ -126,6 +304,64 @@ Anwendung der Leitlinien der European Society of Cardiology (Rule-out, Bildgebun
 # Code für das 6-Variablen-Modell und die ESC-Triage-Tabelle
 ```
 
+```{r esc_montecarlo, include=FALSE, echo = TRUE, warning = FALSE, message = FALSE}
+# Anzahl der Simulationen
+n_sim <- 100
+
+# Leere Listen zum Speichern der Ergebnisse aus den 100 Durchläufen
+sens_liste <- numeric(n_sim)
+spez_liste <- numeric(n_sim)
+auc_liste <- numeric(n_sim)
+verpasste_kranke_liste <- numeric(n_sim) 
+
+# Daten für das Screening-Modell vorbereiten (df_modell muss existieren)
+df_screening <- df_modell %>% select(target, age, sex, cp, trestbps, chol, fbs)
+
+# Schleife: Wir machen das Ganze 100-mal!
+for(i in 1:n_sim) {
+  
+  # 1. Zufälliger Datensplit (neuer Seed in jedem Durchlauf)
+  set.seed(i) # Der Seed ändert sich von 1 bis 100
+  train_index <- sample(seq_len(nrow(df_screening)), size = 0.7 * nrow(df_screening))
+  train_data <- df_screening[train_index, ]
+  test_data  <- df_screening[-train_index, ]
+  
+  # 2. Modell trainieren (mit 6 Variablen)
+  modell <- glm(target ~ ., data = train_data, family = "binomial")
+  
+  # 3. Vorhersagen generieren
+  probs <- predict(modell, newdata = test_data, type = "response")
+  
+  # 4. AUC berechnen (Gesamtgüte des Modells)
+  auc_liste[i] <- as.numeric(auc(roc(test_data$target, probs, levels = c("0", "1"), direction="<", quiet=TRUE)))
+  
+  # 5. Sensitivität & Spezifität beim 15% ESC-Cut-off bewerten
+  vorhersagen_15 <- factor(ifelse(probs > 0.15, "1", "0"), levels = c("0", "1"))
+  cm <- confusionMatrix(data = vorhersagen_15, reference = test_data$target, positive = "1")
+  
+  sens_liste[i] <- cm$byClass["Sensitivity"]
+  spez_liste[i] <- cm$byClass["Specificity"]
+  
+  # 6. Wie viele tatsächlich Kranke wurden fälschlicherweise nach Hause geschickt? (<15%)
+  verpasste_kranke_liste[i] <- sum(probs < 0.15 & test_data$target == "1")
+}
+
+# --- Ergebnisse nach 100 Simulationen berechnen und anzeigen ---
+ergebnisse <- data.frame(
+  Metrik = c("Durchschnittliche Sensitivität (Kranke erkannt)",
+             "Durchschnittliche Spezifität (Gesunde erkannt)",
+             "Durchschnittlicher AUC-Wert (Modellgüte)",
+             "Ø Übersehene Kranke pro Testset (ca. 40 Kranke pro Set)"),
+  Wert = c(round(mean(sens_liste), 3),
+           round(mean(spez_liste), 3),
+           round(mean(auc_liste), 3),
+           round(mean(verpasste_kranke_liste), 2))
+)
+
+print("--- ERGEBNISSE NACH 100 SIMULATIONEN (ESC Rule-out bei 15%) ---")
+print(ergebnisse)
+```
+```
 # Interaktive Diagnose-Applikation (R-Shiny)
 
 [**Hier beschreibt ihr:**] [Dass ihr das Screening-Modell aus Kapitel 6 in eine klickbare R-Shiny App überführt habt, die als Clinical Decision Support System (CDSS) fungiert. Der Code unten ist für die Dokumentation beigefügt und kann als separates `app.R` Skript ausgeführt werden.]
