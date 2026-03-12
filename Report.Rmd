@@ -41,6 +41,26 @@ library(randomForest)
 [Dass ihr den Cleveland Heart Disease Datensatz (n=303) nutzt. Erklärt kurz, dass 6 Fälle wegen fehlender Werte ausgeschlossen wurden. Erklärt methodisch, warum ihr die Zielvariable `num` binarisiert habt (0 = gesund, 1-4 = krank), um ein robustes Modell trotz der geringen Stichprobengrösse schätzen zu können.]
 
 ## Der Cleveland-Datensatz
+### Variablenübersicht (Codebook)
+
+Der verwendete Cleveland-Datensatz umfasst nach der Bereinigung 14 klinisch relevante Attribute. Die folgende Tabelle bietet eine Übersicht über die verwendeten physiologischen Parameter, deren Bedeutung sowie ihre Ausprägungen:
+
+| Variable | Beschreibung | Ausprägungen / Datentyp |
+| :--- | :--- | :--- |
+| **`age`** | Alter der Patienten | Kontinuierlich (in Jahren) |
+| **`sex`** | Geschlecht | Binär (1 = Männlich, 0 = Weiblich) |
+| **`cp`** | Brustschmerztyp (*Chest Pain*) | Kategorial (1 = typische Angina, 2 = atypische Angina, 3 = nicht-anginöser Schmerz, 4 = asymptomatisch) |
+| **`trestbps`** | Ruheblutdruck bei Klinikaufnahme | Kontinuierlich (in mm Hg) |
+| **`chol`** | Serumcholesterin | Kontinuierlich (in mg/dl) |
+| **`fbs`** | Nüchternblutzucker > 120 mg/dl | Binär (1 = Ja, 0 = Nein) |
+| **`restecg`** | Ruhe-EKG-Ergebnisse | Kategorial (0 = normal, 1 = ST-T-Wellen-Anomalie, 2 = wahrscheinliche/definitive Linksherzhypertrophie) |
+| **`thalach`** | Maximal erreichte Herzfrequenz | Kontinuierlich (Schläge pro Minute) |
+| **`exang`** | Belastungsinduzierte Angina pectoris | Binär (1 = Ja, 0 = Nein) |
+| **`oldpeak`** | ST-Senkung durch Belastung (relativ zur Ruhe) | Kontinuierlich |
+| **`slope`** | Steigung des maximalen Belastungs-ST-Segments | Kategorial (1 = ansteigend, 2 = flach, 3 = abfallend) |
+| **`ca`** | Anzahl der Hauptgefässe, gefärbt durch Fluoroskopie | Ordinal (0 bis 3) |
+| **`thal`** | Thallium-Szintigraphie (Nuklearmedizin. Test) | Kategorial (3 = normal, 6 = fixierter Defekt, 7 = reversibler Defekt) |
+| **`num` / `target`** | Diagnose der koronaren Herzkrankheit (Zielvariable) | Ursprünglich 0-4. Binarisiert: 0 = Gesund, 1 = Krank |
 
 ## Datenbereinigung und Binarisierung
 
