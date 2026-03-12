@@ -506,7 +506,9 @@ Der zentrale Mehrwert liegt im Transfer in die klinische Praxis. Da das 9-Variab
 
 Trotz der vielversprechenden Resultate unterliegt die Analyse gewissen Limitierungen. Erstens entstammt der Datensatz dem Jahr 1989. Die medizinische Demografie sowie Ernährungs- und Lebensgewohnheiten haben sich seither verändert, was die direkte Übertragbarkeit der Wahrscheinlichkeitswerte auf heutige Patientenkollektive einschränkt.
 
-Zweitens ist die finale Stichprobengrösse von n=297 für moderne Machine-Learning-Verhältnisse gering. Drittens beschränkt sich das Modell auf einfache Laborparameter. Moderne, hochspezifische Blutbiomarker wie das LDL-Cholesterin, Entzündungsparameter (hs-CRP) oder hochsensitives Troponin fehlen in den Daten, würden die Trennschärfe des Modells in der Praxis jedoch zweifellos weiter erhöhen.
+Zweitens ist die finale Stichprobengrösse von n=297 für moderne Machine-Learning-Verhältnisse gering.
+
+Drittens beschränkt sich das Modell auf einfache Laborparameter. Moderne, spezifische Blutbiomarker wie das LDL-Cholesterin, Entzündungsparameter (hs-CRP) oder hochsensitives Troponin fehlen in den Daten, würden die Trennschärfe des Modells in der Praxis jedoch zweifellos weiter erhöhen.
 
 ## Ausblick und zukünftige Entwicklungen
 
