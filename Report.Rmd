@@ -29,9 +29,16 @@ library(randomForest)
 
 # Einleitung & Forschungsfrage
 
-Hier beschreibt ihr den Hintergrund (WHO-Daten) und eure erweiterte Forschungsfrage (inkl. dem Ziel, ein Triage-Tool für Hausärzte zu bauen).
+[**Hier beschreibt ihr:**]
+[1. Dass ischämische Herzkrankheiten laut WHO weltweit die häufigste Todesursache sind.]
+[2. Was eine koronare Herzkrankheit (KHK) ist und warum Früherkennung so wichtig ist.]
+[3. Eure Forschungsfrage: "Mit welcher diagnostischen Genauigkeit lässt sich das Vorliegen einer KHK durch physiologische Parameter vorhersagen?"]
+[4. Den medizinischen Use Case: Dass ihr am Ende ein Triage-Tool (Gatekeeper) für die Hausarztpraxis entwickeln wollt, das invasive Tests vermeidet.]
 
 # Datengrundlage & Datenaufbereitung (Preprocessing)
+
+[**Hier beschreibt ihr:**]
+[Dass ihr den Cleveland Heart Disease Datensatz (n=303) nutzt. Erklärt kurz, dass 6 Fälle wegen fehlender Werte ausgeschlossen wurden. Erklärt methodisch, warum ihr die Zielvariable `num` binarisiert habt (0 = gesund, 1-4 = krank), um ein robustes Modell trotz der geringen Stichprobengrösse schätzen zu können.]
 
 ## Der Cleveland-Datensatz
 
@@ -42,6 +49,9 @@ Hier beschreibt ihr den Hintergrund (WHO-Daten) und eure erweiterte Forschungsfr
 ```
 
 # Explorative Datenanalyse (EDA)
+
+[**Hier beschreibt ihr:**]
+[Dass eine visuelle und statistische Überprüfung der Daten stattgefunden hat. Erwähnt die Ergebnisse der Chi-Quadrat-Tests (Brustschmerztyp ist hochsignifikant) und der ANOVA (Mittelwerte von Alter und Maximalpuls unterscheiden sich bei Gesunden und Kranken signifikant). Weist auf die Korrelationsmatrix hin, um Multikollinearität zu prüfen.]
 
 ## Visuelle Analyse
 
@@ -57,6 +67,9 @@ Ergebnisse der ANOVA und Chi-Quadrat-Tests sowie die Korrelationsmatrix.
 
 # Statistische Modellierung
 
+[**Hier beschreibt ihr:**]
+[Wie ihr die Daten in 70% Training und 30% Test aufgeteilt habt. Beschreibt das volle logistische Regressionsmodell und wie ihr durch die Rückwärts-Selektion (`step()`) das optimierte Modell gefunden habt. Geht auf das "Alters-Paradoxon" ein: Das Alter war in der EDA isoliert betrachtet signifikant, flog aber bei der Modelloptimierung raus, da es zusammen mit anderen Variaäblen (Blutdruck etc.) keinen statistischen Mehrwert mehr bot.]
+
 ## Basismodell: Logistische Regression
 
 ## Modelloptimierung (Rückwärts-Selektion)
@@ -66,6 +79,9 @@ Ergebnisse der ANOVA und Chi-Quadrat-Tests sowie die Korrelationsmatrix.
 Erklärung des "Alters-Paradoxons" (warum Alter in der EDA wichtig war, aber hier rausfliegt).
 
 # Modellevaluation & Machine-Learning-Vergleich
+
+[**Hier beschreibt ihr:**]
+[Die Ergebnisse eures Modells. Zuerst die Genauigkeit am Testdatensatz (Konfusionsmatrix) und den exzellenten AUC-Wert. Danach erklärt ihr die 10-fache Kreuzvalidierung, um zu beweisen, dass eure Genauigkeit kein Zufall war. Zum Schluss kommt der Vergleich mit dem Random Forest: Zieht das Fazit, dass euer interpretiertes White-Box-Modell (Log. Reg) hier sogar den Black-Box-Algorithmus schlägt!]
 
 ## Kreuzvalidierung (10-Fold Cross-Validation)
 
@@ -78,6 +94,9 @@ Fazit: Warum das White-Box-Modell (Log. Regression) hier gewinnt.
 ```
 
 # Transfer in die klinische Praxis: Das Screening-Modell
+
+[**Hier beschreibt ihr das Highlight eurer Arbeit:**]
+[Das statistisch beste Modell braucht invasive, teure Spital-Tests (Röntgen, Angiographie). Für die Hausarztpraxis ist das unrealistisch. Daher habt ihr ein Screening-Modell aus nur 6 non-invasiven Basisparametern gebaut. Erklärt die Anpassung an die ESC-Guidelines (European Society of Cardiology), bei der die Patienten anhand ihrer Pre-Test Probability in die 3 Triage-Pfade (Rule-out, Bildgebung, Rule-in) eingeteilt werden.]
 
 ## Problemstellung: Invasive vs. Non-invasive Tests
 
@@ -97,11 +116,17 @@ Anwendung der Leitlinien der European Society of Cardiology (Rule-out, Bildgebun
 
 # Interaktive Diagnose-Applikation (R-Shiny)
 
+[**Hier beschreibt ihr:**]
+[Dass ihr das Screening-Modell aus Kapitel 6 in eine klickbare R-Shiny App überführt habt, die als Clinical Decision Support System (CDSS) fungiert. Der Code unten ist für die Dokumentation beigefügt und kann als separates `app.R` Skript ausgeführt werden.]
+
 ## Prototyp des Clinical Decision Support Systems
 
 Screenshot und kurze Erklärung eurer Shiny-App (Der R-Code der App wird normalerweise separat in einer app.R Datei gespeichert, ihr könnt ihn hier aber im Anhang zeigen).
 
 # Diskussion & Fazit
+
+[**Hier beschreibt ihr:**]
+[Eure abschliessende Zusammenfassung. Zählt auf, dass das Modell extrem stark performt hat, ihr methodisch sauber vorgegangen seid (Cross-Validation) und am Ende sogar ein praxistaugliches, leitlinienkonformes Produkt entwickelt habt. Geht kurz auf Schwächen ein (Datensatz von 1989, relativ wenige Patienten) und wie man das in Zukunft verbessern könnte (z.B. mit modernen, grösseren Krankenhausdaten).]
 
 ## Zusammenfassung der Ergebnisse
 
