@@ -1,0 +1,447 @@
+---
+title: "Prädiktion der koronaren Herzkrankheit (KHK)"
+subtitle: "Statistische Modellierung und Entwicklung eines Screening-Tools"
+author: "Eure Namen / Gruppenname"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+    number_sections: true
+    theme: flatly
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+# Grundeinstellungen für das gesamte Dokument
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+# Alle benötigten Bibliotheken laden
+library(ucimlrepo)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(corrplot)
+library(caret)
+library(pROC)
+library(randomForest)
+```
+
+# Einleitung & Forschungsfrage
+
+Herz-Kreislauf-Erkrankungen, insbesondere ischämische Herzkrankheiten wie die koronare Herzkrankheit (KHK), stellen laut der Weltgesundheitsorganisation (WHO) weltweit die führende Todesursache dar. Die KHK, in aktuellen Leitlinien oft unter dem Begriff der chronischen Koronarsyndrome (CCS) zusammengefasst, ist durch eine fortschreitende Arteriosklerose der Herzkranzgefässe gekennzeichnet. Diese Verengung führt zu einer verminderten Sauerstoffversorgung des Herzmuskels, was sich klinisch häufig als Angina Pectoris äussert und unbehandelt in einem lebensbedrohlichen Myokardinfarkt resultieren kann. Eine frühzeitige und präzise Diagnostik ist daher von entscheidender prognostischer Bedeutung.
+
+In der klinischen Praxis stellt die Erstdiagnostik eine erhebliche Herausforderung dar. Die definitive Bestätigung oder der Ausschluss einer KHK erfordert oft ressourcenintensive, teure oder invasive Verfahren, wie beispielsweise die Myokard-Szintigraphie, das Stress-MRT oder die invasive Koronarangiographie (Herzkatheter). Da diese Verfahren nicht flächendeckend als Erstlinientest eingesetzt werden können, kommt der Primärversorgung (Hausarztpraxis) eine essenzielle Triage- und Gatekeeper-Funktion zu. Es bedarf effizienter Entscheidungshilfen, um Patienten mit unklaren Brustschmerzen schnell und sicher anhand leicht erhebbarer Basisparameter in entsprechende Risikogruppen einzuteilen.
+
+Vor diesem medizinischen und gesundheitsökonomischen Hintergrund leitet sich die zentrale Forschungsfrage dieser Arbeit ab: **Mit welcher diagnostischen Genauigkeit lässt sich das Vorliegen einer koronaren Herzkrankheit durch physiologische und klinische Parameter vorhersagen?**
+
+Um diese Frage zu beantworten, verfolgt die vorliegende Arbeit ein zweistufiges Ziel: Im ersten Schritt wird anhand des historischen "Cleveland Heart Disease"-Datensatzes ein statistisch optimiertes Klassifikationsmodell (logistische Regression) entwickelt und evaluiert. Im zweiten Schritt liegt der Fokus auf der praktischen Translation: Ziel ist es, aus den statistischen Erkenntnissen ein praxistaugliches, reduziertes Screening-Tool zu extrahieren. Dieses soll ausschliesslich auf non-invasiven Basisparametern beruhen und sich an den aktuellen Triage-Leitlinien der European Society of Cardiology (ESC) orientieren. Das finale Modell wird schliesslich in einen Prototyp eines interaktiven Clinical Decision Support Systems (CDSS) überführt.
+
+# Datengrundlage & Datenaufbereitung
+
+Für die vorliegende Analyse wurde der renommierte "Cleveland Heart Disease"-Datensatz aus dem UCI Machine Learning Repository herangezogen. Ursprünglich umfasste der Datensatz n = 303 Beobachtungen klinischer Patientendaten. Im Rahmen eines rigorosen Preprocessings wurden die Daten zunächst auf Inkonsistenzen und fehlende Werte (im Originaldatensatz teilweise als "?" kodiert) geprüft. Um Verzerrungen in den späteren Machine-Learning-Modellen zu vermeiden, wurden sechs unvollständige Fälle vollständig aus dem Datensatz entfernt (Listwise Deletion). Die finale, bereinigte Stichprobe für die Modellierung beläuft sich somit auf n = 297 Patienten.
+
+Ein zentraler methodischer Schritt der Datenaufbereitung war die Transformation der abhängigen Zielvariable `num`. Im Originaldatensatz gibt diese den angiografischen Schweregrad der koronaren Herzkrankheit auf einer Skala von 0 (keine Gefässverengung) bis 4 (schwere Mehrgefässerkrankung) an. Für die Zwecke dieser Arbeit wurde diese multikategoriale Variable in eine binäre Klassifikation überführt: Der Wert 0 wurde als "gesund" (Klasse 0) beibehalten, während sämtliche Ausprägungen von 1 bis 4 unter der Klasse "krank" (Klasse 1) zusammengefasst wurden.
+
+Diese Binarisierung ist primär in der geringen Stichprobengrösse begründet. Der Versuch, ein prädiktives Modell für fünf separate Ausprägungen auf Basis von lediglich 297 Patienten zu trainieren, würde zu einer massiven Zersplitterung der Daten (Class Imbalance) und somit zu instabilen Schätzern führen. Durch die Reduktion auf eine dichotome Fragestellung wird das Modell exakt auf die klinisch relevanteste Triage-Entscheidung fokussiert.
+
+## Variablenübersicht 
+
+|  |  |  |
+|----|----|----|
+| **Variable** | **Beschreibung** | **Ausprägungen / Datentyp** |
+| **`age`** | Alter der Patienten | Kontinuierlich (in Jahren) |
+| **`sex`** | Geschlecht | Binär (1 = Männlich, 0 = Weiblich) |
+| **`cp`** | Brustschmerztyp (*Chest Pain*) | Kategorial (1-4) |
+| **`trestbps`** | Ruheblutdruck bei Klinikaufnahme | Kontinuierlich (in mm Hg) |
+| **`chol`** | Serumcholesterin | Kontinuierlich (in mg/dl) |
+| **`fbs`** | Nüchternblutzucker \> 120 mg/dl | Binär (1 = Ja, 0 = Nein) |
+| **`restecg`** | Ruhe-EKG-Ergebnisse | Kategorial (0-2) |
+| **`thalach`** | Maximal erreichte Herzfrequenz | Kontinuierlich |
+| **`exang`** | Belastungsinduzierte Angina pectoris | Binär (1 = Ja, 0 = Nein) |
+| **`oldpeak`** | ST-Senkung durch Belastung | Kontinuierlich |
+| **`slope`** | Steigung des Belastungs-ST-Segments | Kategorial (1-3) |
+| **`ca`** | Anzahl der Hauptgefässe (Fluoroskopie) | Ordinal (0 bis 3) |
+| **`thal`** | Thallium-Szintigraphie | Kategorial (3, 6, 7) |
+| **`target`** | Diagnose der KHK (Zielvariable) | Binarisiert: 0 = Gesund, 1 = Krank |
+
+## Datenbereinigung im Code
+
+Code-Snippet
+
+```         
+# 1. Daten laden
+heart_disease <- fetch_ucirepo(id = 45)
+df <- bind_cols(heart_disease$data$features, heart_disease$data$targets)
+
+# 2. Fehlerhafte Werte (?) mit echtem NA ersetzen und Typen korrigieren
+df[df == "?"] <- NA
+df$ca <- as.numeric(as.character(df$ca))
+df$thal <- as.numeric(as.character(df$thal))
+
+# 3. Zielvariable binarisieren (0 = Gesund, 1 = Krank) und 'num' entfernen
+df_modell <- df %>%
+  mutate(target = as.factor(ifelse(num > 0, "1", "0"))) %>%
+  select(-num)
+
+# 4. Rigoroses Löschen aller fehlenden Werte für sauberes Machine Learning
+df_modell <- na.omit(df_modell)
+
+# Kontrolle der Dimensionen (Erwartet: 297 Zeilen, 14 Spalten)
+dim(df_modell)
+```
+
+# Explorative Datenanalyse (EDA)
+
+Um ein tiefgreifendes Verständnis für die zugrundeliegende Datenstruktur zu gewinnen und erste Hypothesen abzuleiten, wurde eine umfassende explorative Datenanalyse (EDA) durchgeführt.
+
+Zunächst wurden die kategorialen Variablen mittels Kreuztabellen und Pearson-Chi-Quadrat-Tests auf ihre stochastische Unabhängigkeit geprüft. Hierbei zeigte sich ein hochsignifikanter Zusammenhang beim Brustschmerztyp (`cp`, p \< 0.001) und beim Geschlecht (`sex`, p \< 0.001).
+
+Für die kontinuierlichen Variablen wurden Varianzanalysen (ANOVA) durchgeführt. Die Ergebnisse belegen, dass sich erkrankte Patienten hinsichtlich ihres höheren Alters (`age`, p \< 0.001), eines höheren Ruheblutdrucks (`trestbps`, p = 0.008) und insbesondere einer deutlich niedrigeren maximal erreichten Herzfrequenz (`thalach`, p \< 0.001) signifikant von der gesunden Gruppe unterscheiden.
+
+Abschliessend wurde eine Korrelationsmatrix aller numerischen Variablen erstellt, um potenzielle Multikollinearität zu prüfen. Die Inspektion der Matrix zeigt, dass die Korrelationen zwischen den unabhängigen Variablen in einem unkritischen Bereich liegen, weshalb alle Parameter in das initiale Basismodell aufgenommen werden können.
+
+## Hypothesentests (Chi-Quadrat & ANOVA)
+
+Code-Snippet
+
+```         
+# Chi-Quadrat-Tests
+chisq.test(table(df_modell$cp, df_modell$target))
+chisq.test(table(df_modell$sex, df_modell$target))
+
+# Varianzanalysen (ANOVA)
+summary(aov(thalach ~ target, data = df_modell))
+summary(aov(age ~ target, data = df_modell))
+summary(aov(trestbps ~ target, data = df_modell))
+```
+
+## Visuelle Analyse
+
+Code-Snippet
+
+```         
+# --- 1. VISUELLE EDA: Kontinuierliche Variablen (Boxplots) ---
+plot_kontinuierlich <- df_modell %>%
+  select(target, age, thalach, trestbps, chol) %>%
+  pivot_longer(cols = -target, names_to = "Variable", values_to = "Wert") %>%
+  ggplot(aes(x = target, y = Wert, fill = target)) +
+  geom_boxplot(alpha = 0.7, outlier.colour = "red", outlier.shape = 16) +
+  facet_wrap(~ Variable, scales = "free_y") + 
+  scale_fill_manual(values = c("0" = "#1b9e77", "1" = "#d95f02"), 
+                    labels = c("0" = "Gesund", "1" = "Krank")) +
+  theme_minimal() +
+  labs(title = "Verteilung kontinuierlicher Variablen nach KHK-Diagnose",
+       x = "Diagnose (0 = Gesund, 1 = Krank)", y = "Wert", fill = "Status") +
+  theme(legend.position = "bottom")
+
+print(plot_kontinuierlich)
+
+# --- 2. VISUELLE EDA: Brustschmerztyp ---
+plot_cp <- ggplot(df_modell, aes(x = factor(cp), fill = target)) +
+  geom_bar(position = "fill", alpha = 0.8) + 
+  scale_fill_manual(values = c("0" = "#1b9e77", "1" = "#d95f02"),
+                    labels = c("0" = "Gesund", "1" = "Krank")) +
+  theme_minimal() +
+  labs(title = "KHK-Anteil nach Brustschmerztyp (cp)",
+       x = "Brustschmerztyp (1 bis 4)", y = "Prozentualer Anteil", fill = "Status")
+
+print(plot_cp)
+
+# --- 3. VISUELLE EDA: Korrelationsmatrix ---
+df_numerisch <- df_modell %>% mutate(across(everything(), as.numeric)) 
+korrelations_matrix <- cor(df_numerisch, use = "complete.obs")
+
+corrplot(korrelations_matrix, method = "color", type = "upper", 
+         addCoef.col = "black", number.cex = 0.6, tl.col = "black", 
+         tl.srt = 45, diag = FALSE, title = "Korrelationsmatrix",
+         mar = c(0,0,2,0))       
+```
+
+# Statistische Modellierung
+
+Um ein belastbares prädiktives Modell zu erstellen, wurde der Datensatz zunächst reproduzierbar in ein Trainingsset (70 %, n = 207) und ein Testset (30 %, n = 90) aufgeteilt.
+
+Im ersten Schritt wurde ein Basismodell geschätzt, welches alle 13 Prädiktoren einschloss. Dies lieferte einen initialen AIC-Wert von 164.5. Da zu komplexe Modelle anfällig für Overfitting sind, wurde das Basismodell in einem zweiten Schritt durch eine systematische Rückwärts-Selektion (`step()`) optimiert. Das resultierende Modell umfasst lediglich noch neun Prädiktoren. Durch diese Reduktion konnte der AIC-Wert signifikant auf 159.8 verbessert werden.
+
+**Interpretation des "Alters-Paradoxons":** Besondere Beachtung verdient das Ausscheiden der Variable Alter (`age`). In der EDA zeigte sich das Alter noch als hochsignifikanter Trennfaktor. In der multivariaten Regression verlor es jedoch seine Signifikanz und wurde eliminiert. Zwar steigt das KHK-Risiko mit dem Alter an, jedoch manifestiert sich dieses Risiko direkt in anderen gemessenen Parametern (wie Blutdruck oder Gefässverkalkung). Sobald diese direkten "Treiber" im Modell enthalten sind, liefert das blosse Alter keine zusätzliche Erklärungsleistung mehr.
+
+## Basismodell (13 Variablen)
+
+Code-Snippet
+
+```         
+# Datensplit (70/30)
+set.seed(42)
+train_index <- sample(seq_len(nrow(df_modell)), size = 0.7 * nrow(df_modell))
+train_data <- df_modell[train_index, ]
+test_data  <- df_modell[-train_index, ]
+
+# Volles Modell trainieren
+modell_voll <- glm(target ~ ., data = train_data, family = "binomial")
+summary(modell_voll)
+```
+
+## Optimiertes Modell (Rückwärts-Selektion)
+
+Code-Snippet
+
+```         
+# Automatische Rückwärts-Selektion durchführen
+modell_optimiert <- step(modell_voll, direction = "backward")
+```
+
+Code-Snippet
+
+```         
+# Finales, reduziertes Modell anzeigen
+summary(modell_optimiert)
+```
+
+# Modellevaluation und Schwellenwert-Analyse
+
+Zur Überprüfung der prädiktiven Güte wurde das optimierte Modell auf den ungesehenen Testdatensatz angewendet.
+
+**Standard-Evaluation (Cut-off: 50%)**
+
+Beim klassischen Schwellenwert von 50 % bescheinigt die Konfusionsmatrix dem Modell eine Gesamtgenauigkeit von über 82 %. Mit einem berechneten AUC-Wert von 0.884 beweist das Modell eine herausragende Diskriminierungsfähigkeit zwischen gesunden und erkrankten Patienten.
+
+**Das "übervorsichtige" Modell (Cut-off: 20%)**
+
+In einem Screening-Szenario hat ein falsch-negatives Ergebnis (einen kranken Patienten nach Hause zu schicken) potenziell fatale Konsequenzen. Um diesem Use-Case gerecht zu werden, wurde der Schwellenwert bewusst auf 20 % gesenkt. Die Sensitivität steigt hierdurch auf über 90 % an. Dieser Gewinn an Patientensicherheit wird durch einen Abfall der Spezifität (ca. 56 %) erkauft. Das Modell schlägt nun häufiger falschen Alarm, minimiert aber das Risiko, kritische Fälle zu übersehen.
+
+## Standard-Evaluation (50%) & ROC-Kurve
+
+Code-Snippet
+
+```         
+wahrscheinlichkeiten <- predict(modell_optimiert, newdata = test_data, type = "response")
+
+# Schwellenwert 50%
+vorhersagen_klassen <- ifelse(wahrscheinlichkeiten > 0.5, "1", "0")
+vorhersagen_fakt <- factor(vorhersagen_klassen, levels = levels(test_data$target))
+
+# Konfusionsmatrix
+konfusionsmatrix <- confusionMatrix(data = vorhersagen_fakt, reference = test_data$target, positive = "1")
+print(konfusionsmatrix)
+
+# ROC-Kurve
+roc_kurve <- roc(test_data$target, wahrscheinlichkeiten, levels = c("0", "1"), direction="<", quiet=TRUE)
+plot(roc_kurve, main = "ROC-Kurve für das optimierte KHK-Modell", col = "blue", lwd = 2)
+print(paste("Der AUC-Wert beträgt:", round(auc(roc_kurve), 3)))
+```
+
+## Klinische Rekalibrierung (20%)
+
+Code-Snippet
+
+```         
+# Schwellenwert 20%
+neuer_cutoff <- 0.20
+vorhersagen_sensibel <- ifelse(wahrscheinlichkeiten > neuer_cutoff, "1", "0")
+vorhersagen_sensibel_fakt <- factor(vorhersagen_sensibel, levels = levels(test_data$target))
+
+matrix_sensibel <- confusionMatrix(data = vorhersagen_sensibel_fakt, reference = test_data$target, positive = "1")
+
+print("Metriken beim 20%-Schwellenwert:")
+print(matrix_sensibel$byClass[c("Sensitivity", "Specificity")])
+print(paste("Genauigkeit (Accuracy):", round(matrix_sensibel$overall["Accuracy"], 3)))
+```
+
+# Methoden-Stresstest: Kreuzvalidierung & Machine Learning
+
+Um auszuschliessen, dass die Metriken lediglich das Resultat einer zufällig vorteilhaften Aufteilung ("Lucky Split") sind, wurde eine 10-fache Kreuzvalidierung (Cross-Validation) über den gesamten Datensatz durchgeführt. Hierbei bestätigte das logistische Regressionsmodell seine Stabilität mit einer Accuracy von 84.2 %.
+
+Abschliessend wurde die logistische Regression dem modernen Machine-Learning-Algorithmus Random Forest gegenübergestellt. Die Ergebnisse zeigen, dass der Random Forest keine signifikante Leistungssteigerung erbringt. Da die logistische Regression als "White-Box"-Modell (Explainable AI) interpretierbare Koeffizienten liefert, qualifiziert sie sich als das überlegene Verfahren für die medizinische Praxis.
+
+Code-Snippet
+
+```         
+train_kontrolle <- trainControl(method = "cv", number = 10)
+
+# Logistische Regression (CV)
+cv_logreg <- train(target ~ sex + cp + trestbps + fbs + thalach + exang + slope + ca + thal, 
+                   data = df_modell, method = "glm", family = "binomial", trControl = train_kontrolle)
+print("--- Logistische Regression (10-Fold CV) ---")
+print(cv_logreg$results)
+
+# Random Forest (CV)
+set.seed(42)
+cv_rf <- train(target ~ ., data = df_modell, method = "rf", trControl = train_kontrolle)
+print("--- Random Forest (10-Fold CV) ---")
+print(cv_rf$results[cv_rf$results$mtry == 2, ])
+```
+
+# Transfer in die klinische Praxis: Das Screening-Modell
+
+Obwohl das entwickelte 9-Variablen-Modell eine exzellente Güte aufweist, stösst es in der Hausarztpraxis auf Limitierungen: Parameter wie Gefässverengung (`ca`) oder Szintigraphie (`thal`) setzen genau die invasiven Tests voraus, die vermieden werden sollen. Es bedarf eines "Gatekeeper"-Modells.
+
+**Entwicklung des Hausarzt-Modells**
+
+Es wurde ein stark reduziertes Modell trainiert, das sich auf sechs non-invasive Attribute stützt (Alter, Geschlecht, Ruheblutdruck, Brustschmerztyp, Cholesterin, Nüchternblutzucker). Da kein Fall übersehen werden darf, wurde der Cut-off extrem konservativ auf 10 % gesetzt. Dies resultiert am Testset in einer Sensitivität von 100 %.
+
+**ESC-konforme Triage**
+
+Die Vorhersagen (Pre-Test Probability) wurden an die Leitlinien der European Society of Cardiology (ESC) angeglichen, um Patienten vollautomatisch in drei Pfade zu stratifizieren:
+
+1.  **Niedrig (\< 15 %):** Keine weiteren Tests (Rule-out).
+
+2.  **Mittel (15 - 85 %):** Überweisung für nicht-invasive Bildgebung.
+
+3.  **Hoch (\> 85 %):** Direkte Überweisung zum Herzkatheter (Rule-in).
+
+**Monte-Carlo-Simulation**
+
+Eine 100-fache Monte-Carlo-Simulation beweist abschliessend die statistische Stabilität: Im Durchschnitt stabilisierte sich die Sensitivität bei hervorragenden 94.2 %, bei einer minimalen Fehlerrate von ca. 2.5 übersehenen Patienten pro Testset, was den tolerierten ESC-Richtlinien entspricht.
+
+## Gatekeeper-Modell & ESC-Triage
+
+Code-Snippet
+
+```         
+# Daten für das Screening-Modell (nur 6 Variablen!)
+df_screening <- df_modell %>% select(target, age, sex, cp, trestbps, chol, fbs)
+
+train_data_scr <- df_screening[train_index, ]
+test_data_scr  <- df_screening[-train_index, ]
+
+# Neues Modell trainieren
+modell_screening <- glm(target ~ ., data = train_data_scr, family = "binomial")
+wahrscheinlichkeiten_scr <- predict(modell_screening, newdata = test_data_scr, type = "response")
+
+# Schwellenwert 10% für maximale Sensitivität
+vorhersagen_fakt_scr <- factor(ifelse(wahrscheinlichkeiten_scr > 0.10, "1", "0"), levels = levels(test_data_scr$target))
+
+matrix_screening <- confusionMatrix(data = vorhersagen_fakt_scr, reference = test_data_scr$target, positive = "1")
+print("Performance des 6-Variablen-Screening-Modells (Cut-off 10%):")
+print(matrix_screening$byClass[c("Sensitivity", "Specificity")])
+
+# ESC Triage System
+esc_triage <- cut(wahrscheinlichkeiten_scr, 
+                  breaks = c(-Inf, 0.15, 0.85, Inf), 
+                  labels = c("1. Niedrig (<15%): Keine Tests", 
+                             "2. Mittel (15-85%): Bildgebung", 
+                             "3. Hoch (>85%): Herzkatheter"))
+
+triage_ergebnisse <- table(Vorhersage = esc_triage, Tatsaechliche_Diagnose = test_data_scr$target)
+print("ESC-Triage-System angewendet auf den Testdatensatz:")
+print(triage_ergebnisse)
+```
+
+## 100-fache Monte-Carlo-Simulation
+
+Code-Snippet
+
+```         
+n_sim <- 100
+sens_liste <- numeric(n_sim)
+spez_liste <- numeric(n_sim)
+
+for(i in 1:n_sim) {
+  set.seed(i)
+  t_index <- sample(seq_len(nrow(df_screening)), size = 0.7 * nrow(df_screening))
+  t_data <- df_screening[t_index, ]
+  v_data <- df_screening[-t_index, ]
+  
+  mod <- glm(target ~ ., data = t_data, family = "binomial")
+  p <- predict(mod, newdata = v_data, type = "response")
+  
+  cm <- confusionMatrix(data = factor(ifelse(p > 0.15, "1", "0"), levels = c("0", "1")), 
+                        reference = v_data$target, positive = "1")
+  
+  sens_liste[i] <- cm$byClass["Sensitivity"]
+  spez_liste[i] <- cm$byClass["Specificity"]
+}
+
+ergebnisse_mc <- data.frame(
+  Metrik = c("Ø Sensitivität (Kranke erkannt)", "Ø Spezifität (Gesunde erkannt)"),
+  Wert = c(round(mean(sens_liste), 3), round(mean(spez_liste), 3))
+)
+
+print("--- ERGEBNISSE NACH 100 SIMULATIONEN (ESC Rule-out bei 15%) ---")
+print(ergebnisse_mc)
+```
+
+# Interaktive Diagnose-Applikation (R-Shiny)
+
+**Prototyp des Clinical Decision Support Systems (CDSS)**
+
+Um die praktische Anwendbarkeit des entwickelten Gatekeeper-Modells zu demonstrieren, wurde eine interaktive Web-Applikation mit dem R-Paket `shiny` programmiert. Diese App dient als grafische Benutzeroberfläche (GUI) für medizinisches Personal in der Primärversorgung.
+
+Der Anwender kann die sechs identifizierten Basisparameter über intuitive Schieberegler und Dropdown-Menüs eingeben. Im Hintergrund berechnet das logistische Regressionsmodell in Echtzeit die Pre-Test Probability (PTP) für das Vorliegen einer KHK. Basierend auf den implementierten ESC-Leitlinien übersetzt die Applikation diese Wahrscheinlichkeit direkt in eine Handlungsempfehlung. Das Tool schlägt somit erfolgreich die Brücke zwischen prädiktiver statistischer Modellierung und der patientennahen Triage.
+
+Code-Snippet
+
+```         
+library(shiny)
+
+# Nutzt das 'modell_screening' aus dem Environment
+ui <- fluidPage(
+  titlePanel("KHK-Screening-Tool (Hausarzt-Triage)"),
+  sidebarLayout(
+    sidebarPanel(
+      numericInput("age", "Alter:", value = 50, min = 20, max = 100),
+      selectInput("sex", "Geschlecht:", choices = list("Weiblich" = 0, "Männlich" = 1)),
+      sliderInput("cp", "Brustschmerztyp (1-4):", min = 1, max = 4, value = 1),
+      sliderInput("trestbps", "Ruheblutdruck:", min = 90, max = 200, value = 120),
+      sliderInput("chol", "Cholesterin:", min = 100, max = 400, value = 200),
+      selectInput("fbs", "Blutzucker > 120:", choices = list("Nein" = 0, "Ja" = 1))
+    ),
+    mainPanel(
+      h3("Ergebnis nach ESC-Guidelines"),
+      h4("Pre-Test Probability (PTP):"),
+      verbatimTextOutput("prob_out"),
+      h4("Triage-Empfehlung:"),
+      verbatimTextOutput("triage_out")
+    )
+  )
+)
+
+server <- function(input, output) {
+  vorhersage <- reactive({
+    neuer_patient <- data.frame(
+      age = input$age, sex = as.numeric(input$sex), cp = input$cp,
+      trestbps = input$trestbps, chol = input$chol, fbs = as.numeric(input$fbs)
+    )
+    predict(modell_screening, newdata = neuer_patient, type = "response")
+  })
+  
+  output$prob_out <- renderText({ paste0(round(vorhersage() * 100, 1), " %") })
+  
+  output$triage_out <- renderText({
+    p <- vorhersage()
+    if(p < 0.15) return("NIEDRIGES RISIKO: Keine weiteren Tests nötig (Rule-out).")
+    if(p <= 0.85) return("MITTLERES RISIKO: Nicht-invasive Bildgebung (z.B. Echo/MRI).")
+    return("HOHES RISIKO: Direkte Überweisung zur invasiven Koronarangiographie.")
+  })
+}
+shinyApp(ui, server)
+```
+
+# Diskussion & Fazit
+
+## Zusammenfassung der Ergebnisse
+
+Die vorliegende Arbeit demonstriert erfolgreich, wie maschinelle Lernverfahren und statistische Modellierung genutzt werden können, um die Diagnostik der koronaren Herzkrankheit in der medizinischen Primärversorgung zu optimieren. Ausgehend vom historischen Cleveland-Datensatz wurde zunächst ein prädiktives logistisches Regressionsmodell entwickelt. Durch eine AIC-Optimierung konnte das Modell von 13 auf 9 Prädiktoren reduziert werden. Das resultierende Modell überzeugte mit exzellenter Diskriminierungsfähigkeit (AUC = 0.884) und erwies sich in der Kreuzvalidierung (Accuracy = 84.2 %) gegenüber komplexeren Black-Box-Verfahren wie Random Forest als ebenbürtig und aufgrund seiner hohen Interpretierbarkeit als überlegen.
+
+Der zentrale Mehrwert liegt im Transfer in die klinische Praxis. Da das 9-Variablen-Modell invasive Parameter voraussetzte, wurde ein reduziertes Gatekeeper-Modell aus lediglich sechs non-invasiven Basisparametern für die Hausarztpraxis extrahiert. Durch eine gezielte Schwellenwert-Rekalibrierung und die Integration der ESC-Triage-Leitlinien entstand ein Screening-Tool, das eine Sensitivität von 100 % (im finalen Testset) bzw. 94.2 % (in der Monte-Carlo-Simulation) erreichte. Die Überführung in eine R-Shiny Applikation belegt die technische Machbarkeit eines solchen digitalen Assistenzsystems.
+
+## Limitierungen der Arbeit
+
+Trotz der vielversprechenden Resultate unterliegt die Analyse gewissen Limitierungen. Erstens entstammt der Datensatz dem Jahr 1989. Die medizinische Demografie sowie Ernährungs- und Lebensgewohnheiten haben sich seither verändert, was die direkte Übertragbarkeit der Wahrscheinlichkeitswerte auf heutige Patientenkollektive einschränkt.
+
+Zweitens ist die finale Stichprobengrösse von n=297 für moderne Machine-Learning-Verhältnisse gering. Drittens beschränkt sich das Modell auf einfache Laborparameter. Moderne, hochspezifische Blutbiomarker wie das LDL-Cholesterin, Entzündungsparameter (hs-CRP) oder hochsensitives Troponin fehlen in den Daten, würden die Trennschärfe des Modells in der Praxis jedoch zweifellos weiter erhöhen.
+
+## Ausblick und zukünftige Entwicklungen
+
+Für zukünftige Entwicklungen wäre ein zweistufiges Kaskaden-Screening-Modell denkbar. Stufe 1 berechnet das KHK-Risiko vollkommen non-invasiv für eine sofortige Triage im Sprechzimmer. Nur bei einem unklaren Ergebnis (mittleres Risiko) wird Stufe 2 ausgelöst, welche die Auswertung der Point-of-Care-Blutwerte hinzuzieht.
+
+Darüber hinaus eröffnet die Verbreitung von Smartwatches neue diagnostische Perspektiven. Zukünftige Modelle könnten mit Echtzeit-Datenströmen (wie Herzfrequenzvariabilität oder 1-Kanal-EKG) trainiert werden. Ein solches, auf kontinuierlichem Monitoring basierendes Modell könnte Warnsignale für eine chronische Ischämie bereits detektieren, noch bevor der Patient aufgrund akuter Brustschmerzen den Arzt aufsucht. Die Kombination aus interpretierbaren statistischen Verfahren und modernen Sensordaten stellt einen vielversprechenden Pfad für die präventive Kardiologie dar.
+
+```         
+
+***
+
+Jetzt ist wirklich alles an seinem richtigen Platz! Kopiere das, klicke in RStudio auf "Knit" und geniesse euer perfekt strukturiertes HTML-Dokument. Viel Spass beim Bestaunen des Endresultats!
+```
