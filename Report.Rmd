@@ -101,32 +101,29 @@ Ergebnisse der ANOVA und Chi-Quadrat-Tests sowie die Korrelationsmatrix.
 # --- EDA: Chi-Quadrat-Tests ---
 
 # 1. Brustschmerztyp (cp) vs. Zielvariable (target)
-# Erstelle zuerst eine Kreuztabelle
-tabelle_cp <- table(df$cp, df$target)
+# Erstelle zuerst eine Kreuztabelle (Wir nutzen jetzt df_modell!)
+tabelle_cp <- table(df_modell$cp, df_modell$target)
 # Führe den Test aus
 test_cp <- chisq.test(tabelle_cp)
 print(test_cp)
 
 # 2. Geschlecht (sex) vs. Zielvariable (target)
-tabelle_sex <- table(df$sex, df$target)
+tabelle_sex <- table(df_modell$sex, df_modell$target)
 test_sex <- chisq.test(tabelle_sex)
 print(test_sex)
-
 ```
 
 ```{r EDA_ANOVA, echo = TRUE, warning = FALSE, message = FALSE}
-# --- EDA: Einseitige ANOVA ---
-
 # 1. Maximale Herzfrequenz (thalach) nach Zielvariable (target)
-anova_thalach <- aov(thalach ~ target, data = df)
+anova_thalach <- aov(thalach ~ target, data = df_modell)
 summary(anova_thalach)
 
 # 2. Alter (age) nach Zielvariable (target)
-anova_age <- aov(age ~ target, data = df)
+anova_age <- aov(age ~ target, data = df_modell)
 summary(anova_age)
 
 # 3. Ruheblutdruck (trestbps) nach Zielvariable (target)
-anova_trestbps <- aov(trestbps ~ target, data = df)
+anova_trestbps <- aov(trestbps ~ target, data = df_modell)
 summary(anova_trestbps)
 
 ```
@@ -135,13 +132,12 @@ hier hat es noch ein fehler drin
 
 ```{r EDA_Plots, echo = TRUE, warning = FALSE, message = FALSE}
 # --- 1. VISUELLE EDA: Kontinuierliche Variablen (Boxplots) ---
-# Wir wählen die wichtigsten numerischen Variablen und plotten sie in einem Grid
-plot_kontinuierlich <- df %>%
+plot_kontinuierlich <- df_modell %>%
   select(target, age, thalach, trestbps, chol) %>%
   pivot_longer(cols = -target, names_to = "Variable", values_to = "Wert") %>%
   ggplot(aes(x = target, y = Wert, fill = target)) +
   geom_boxplot(alpha = 0.7, outlier.colour = "red", outlier.shape = 16) +
-  facet_wrap(~ Variable, scales = "free_y") + # Erstellt für jede Variable ein eigenes Fenster
+  facet_wrap(~ Variable, scales = "free_y") + 
   scale_fill_manual(values = c("0" = "#1b9e77", "1" = "#d95f02"), 
                     labels = c("0" = "Gesund", "1" = "Krank")) +
   theme_minimal() +
@@ -157,8 +153,8 @@ print(plot_kontinuierlich)
 # --- 2. VISUELLE EDA: Kategoriale Variablen (Gestapelte Balkendiagramme) ---
 
 # Plot für Brustschmerztyp (cp)
-plot_cp <- ggplot(df, aes(x = factor(cp), fill = target)) +
-  geom_bar(position = "fill", alpha = 0.8) + # "fill" macht es zu 100%-gestapelten Balken
+plot_cp <- ggplot(df_modell, aes(x = factor(cp), fill = target)) +
+  geom_bar(position = "fill", alpha = 0.8) + 
   scale_fill_manual(values = c("0" = "#1b9e77", "1" = "#d95f02"),
                     labels = c("0" = "Gesund", "1" = "Krank")) +
   theme_minimal() +
@@ -170,7 +166,7 @@ plot_cp <- ggplot(df, aes(x = factor(cp), fill = target)) +
 print(plot_cp)
 
 # Plot für Geschlecht (sex)
-plot_sex <- ggplot(df, aes(x = factor(sex), fill = target)) +
+plot_sex <- ggplot(df_modell, aes(x = factor(sex), fill = target)) +
   geom_bar(position = "fill", alpha = 0.8) +
   scale_fill_manual(values = c("0" = "#1b9e77", "1" = "#d95f02"),
                     labels = c("0" = "Gesund", "1" = "Krank")) +
@@ -185,27 +181,23 @@ print(plot_sex)
 
 
 # --- 3. VISUELLE EDA: Multikollinearität (Korrelationsmatrix) ---
-# Für die Korrelation dürfen wir nur reine Zahlen verwenden, keine Faktoren!
-df_numerisch <- df %>%
-  # Wandelt alle Spalten in numerische Werte um (auch unsere binarisierte target-Variable)
+df_numerisch <- df_modell %>%
   mutate(across(everything(), as.numeric)) 
 
 # Korrelationsmatrix berechnen
 korrelations_matrix <- cor(df_numerisch, use = "complete.obs")
 
-
-
 # Matrix plotten
 corrplot(korrelations_matrix, 
-         method = "color",       # Farben statt Kreise
-         type = "upper",         # Nur das obere Dreieck anzeigen (übersichtlicher)
-         addCoef.col = "black",  # Zahlenwerte in die Kästchen schreiben
-         number.cex = 0.6,       # Schriftgrösse der Zahlen
-         tl.col = "black",       # Schriftfarbe der Variablen-Namen
-         tl.srt = 45,            # Variablen-Namen um 45 Grad drehen
-         diag = FALSE,           # Die Diagonale (immer 1) ausblenden
+         method = "color",       
+         type = "upper",         
+         addCoef.col = "black",  
+         number.cex = 0.6,       
+         tl.col = "black",       
+         tl.srt = 45,            
+         diag = FALSE,           
          title = "Korrelationsmatrix der klinischen Parameter",
-         mar = c(0,0,2,0))       # Rand anpassen, damit der Titel Platz hat
+         mar = c(0,0,2,0))
 ```
 
 # Statistische Modellierung
@@ -233,11 +225,6 @@ summary(modell_voll)
 ## Modelloptimierung (Rückwärts-Selektion)
 
 ```{r optimiertes_modell, echo = TRUE, warning = FALSE, message = FALSE}
-# Datensplit (70/30)
-set.seed(42)
-train_index <- sample(seq_len(nrow(df_modell)), size = 0.7 * nrow(df_modell))
-train_data <- df_modell[train_index, ]
-test_data  <- df_modell[-train_index, ]
 
 # Volles Modell trainieren & Rückwärts-Selektion
 modell_voll <- glm(target ~ ., data = train_data, family = "binomial")
@@ -354,8 +341,8 @@ Anwendung der Leitlinien der European Society of Cardiology (Rule-out, Bildgebun
 ```{r esc_modell, echo = TRUE, warning = FALSE, message = FALSE}
 
 # --- 1. Daten für das Screening-Modell vorbereiten ---
-# Wir behalten NUR die einfachen, schnell erhebbaren Basis-Parameter
-df_screening <- df %>%
+# WICHTIG: Wir nutzen df_modell, da hier die Spalte 'target' bereits existiert!
+df_screening <- df_modell %>%
   select(target, age, sex, cp, trestbps, chol, fbs)
 
 # Wir teilen die Daten erneut auf (70% Training, 30% Test), um fair zu evaluieren
@@ -372,10 +359,7 @@ modell_screening <- glm(target ~ ., data = train_data_scr, family = "binomial")
 wahrscheinlichkeiten_scr <- predict(modell_screening, newdata = test_data_scr, type = "response")
 
 # --- 4. Schwellenwert für MAXIMALE Sensitivität setzen ---
-# Da wir niemanden übersehen wollen, setzen wir den Cut-off extrem tief an.
-# "Schon wenn das Modell eine 10%ige Chance sieht, schlagen wir Alarm!"
 cutoff_screening <- 0.10
-
 vorhersagen_klassen_scr <- ifelse(wahrscheinlichkeiten_scr > cutoff_screening, "1", "0")
 vorhersagen_fakt_scr <- factor(vorhersagen_klassen_scr, levels = levels(test_data_scr$target))
 
@@ -385,22 +369,19 @@ matrix_screening <- confusionMatrix(data = vorhersagen_fakt_scr,
                                     positive = "1")
 
 # Ausgabe der wichtigsten Metriken
-print(matrix_screening$table) # Zeigt dir die genauen Patientenzahlen
+print(matrix_screening$table) 
 print(matrix_screening$byClass[c("Sensitivity", "Specificity")])
 
 # --- ESC-Konforme Risikostratifizierung ---
 
-# 1. Wir nutzen die Wahrscheinlichkeiten aus unserem Hausarzt-Modell
-# (wahrscheinlichkeiten_scr aus dem vorherigen Schritt)
-
-# 2. ESC-Triage-Gruppen erstellen
+# 1. ESC-Triage-Gruppen erstellen (Grenzwerte 15% und 85%)
 esc_triage <- cut(wahrscheinlichkeiten_scr, 
                   breaks = c(-Inf, 0.15, 0.85, Inf), 
                   labels = c("1. Niedriges Risiko (<15%): Keine Tests", 
                              "2. Mittleres Risiko (15-85%): Nicht-invasive Bildgebung", 
                              "3. Hohes Risiko (>85%): Herzkatheter (Invasiv)"))
 
-# 3. Ergebnisse mit der Realität abgleichen
+# 2. Ergebnisse mit der Realität abgleichen
 triage_ergebnisse <- table(Vorhersage_ESC_Klasse = esc_triage, 
                            Tatsaechliche_Diagnose = test_data_scr$target)
 
@@ -532,4 +513,4 @@ Screenshot und kurze Erklärung eurer Shiny-App (Der R-Code der App wird normale
 
 (Z. B. geringe Stichprobengrösse, Alter des Datensatzes).
 
-## 
+## abc
