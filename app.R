@@ -1,3 +1,6 @@
+
+#saveRDS(modell_screening, file = "modell_screening.rds")
+
 library(shiny)
 # Nutzt 'modell_screening' aus dem Environment
 ui <- fluidPage(
