@@ -258,6 +258,47 @@ Zur Überprüfung der prädiktiven Güte wurde das optimierte Modell auf den Tes
 
 ## Standard-Evaluation (50%) & ROC-Kurve
 
+### Heatmap
+
+```{r eval_50_heatmap, echo=TRUE, fig.width=6, fig.height=5, warning=FALSE, message=FALSE}
+# 1. Wahrscheinlichkeiten berechnen
+wahrscheinlichkeiten <- predict(modell_optimiert, newdata = test_data, type = "response")
+
+# 2. Schwellenwert 50% anwenden
+vorhersagen_klassen <- ifelse(wahrscheinlichkeiten > 0.5, "1", "0")
+vorhersagen_fakt <- factor(vorhersagen_klassen, levels = levels(test_data$target))
+
+# 3. Konfusionsmatrix BERECHNEN (Hier wird die Variable erstellt!)
+konfusionsmatrix <- confusionMatrix(data = vorhersagen_fakt, reference = test_data$target, positive = "1")
+
+# Standard-Output anzeigen
+print(konfusionsmatrix)
+
+# 4. Direkt danach die krasse Heatmap BAUEN
+cm_daten <- as.data.frame(konfusionsmatrix$table)
+colnames(cm_daten) <- c("Vorhersage", "Referenz", "Anzahl")
+
+heatmap_cm <- ggplot(data = cm_daten, aes(x = Referenz, y = Vorhersage, fill = Anzahl)) +
+  geom_tile(color = "white", linewidth = 1.5) +
+  scale_fill_gradient(low = "#e0f3f8", high = "#313695", name = "Patienten") +
+  geom_text(aes(label = Anzahl), 
+            color = ifelse(cm_daten$Anzahl > 20, "white", "black"), 
+            size = 8, fontface = "bold") +
+  theme_minimal() +
+  labs(title = "Heatmap der Klassifikationsleistung",
+       subtitle = "Vorhersage vs. Tatsächliche Diagnose (Cut-off: 50%)",
+       x = "Tatsächliche Diagnose (0 = Gesund, 1 = Krank)",
+       y = "Modell-Vorhersage") +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14, face = "bold"),
+        plot.title = element_text(size = 16, face = "bold"),
+        panel.grid = element_blank())
+
+# Heatmap anzeigen
+print(heatmap_cm)
+```
+
+###ROC-Kurve
 ```{r}
 wahrscheinlichkeiten <- predict(modell_optimiert, newdata = test_data, type = "response")
 
@@ -325,6 +366,7 @@ cv_rf <- train(target ~ ., data = df_modell, method = "rf", trControl = train_ko
 print("--- Random Forest (10-Fold CV) ---")
 print(cv_rf$results[cv_rf$results$mtry == 2, ])
 ```
+
 
 **Robustheitsprüfung mittels Kreuzvalidierung** Um die prädiktive Güte methodisch abzusichern und eine Verzerrung durch eine zufällig vorteilhafte Datenaufteilung (Overfitting an den spezifischen Train-Test-Split) auszuschliessen, wurde das reduzierte 9-Variablen-Modell einer 10-fachen Kreuzvalidierung (10-Fold Cross-Validation) unterzogen. Über alle zehn Folds hinweg erzielt die logistische Regression eine durchschnittliche Gesamtgenauigkeit (Accuracy) von 84.2 % sowie einen soliden Cohens-Kappa-Wert von 0.68. Dies bestätigt die hohe Stabilität und Generalisierbarkeit des Regressionsmodells auf ungesehene Patientendaten.
 
@@ -442,7 +484,7 @@ Um die praktische Anwendbarkeit des entwickelten Gatekeeper-Modells zu demonstri
 
 Der Anwender kann die sechs identifizierten Basisparameter über intuitive Schieberegler und Dropdown-Menüs eingeben. Im Hintergrund berechnet das logistische Regressionsmodell in Echtzeit die Pre-Test Probability (PTP) für das Vorliegen einer KHK. Basierend auf den implementierten ESC-Leitlinien übersetzt die Applikation diese Wahrscheinlichkeit direkt in eine Handlungsempfehlung. Das Tool schlägt somit erfolgreich die Brücke zwischen prädiktiver statistischer Modellierung und der patientennahen Triage.
 
-```{r}
+```{r, eval=FALSE}
 # Nutzt 'modell_screening' aus dem Environment
 ui <- fluidPage(
   titlePanel("KHK-Screening-Tool"),
