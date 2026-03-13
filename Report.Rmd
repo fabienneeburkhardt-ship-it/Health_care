@@ -32,7 +32,7 @@ output:
 
 ```{r setup, include=FALSE}
 # Grundeinstellungen für das gesamte Dokument
-knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, include = FALSE)
+knitr::opts_chunk$set(echo = TRUE, results = 'hide', warning = FALSE, message = FALSE)
 
 # Alle benötigten Bibliotheken laden
 library(ucimlrepo)
