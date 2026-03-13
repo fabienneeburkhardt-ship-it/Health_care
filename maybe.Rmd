@@ -36,11 +36,11 @@ In der klinischen Praxis stellt die Erstdiagnostik eine erhebliche Herausforderu
 
 Vor diesem medizinischen und gesundheitsökonomischen Hintergrund leitet sich die zentrale Forschungsfrage dieser Arbeit ab: **Mit welcher diagnostischen Genauigkeit lässt sich das Vorliegen einer koronaren Herzkrankheit durch physiologische und klinische Parameter vorhersagen?**
 
-Um diese Frage zu beantworten, verfolgt die vorliegende Arbeit ein zweistufiges Ziel: Im ersten Schritt wird anhand des historischen "Cleveland Heart Disease"-Datensatzes ein statistisch optimiertes Klassifikationsmodell (logistische Regression) entwickelt und evaluiert. Im zweiten Schritt liegt der Fokus auf der praktischen Translation: Ziel ist es, aus den statistischen Erkenntnissen ein praxistaugliches, reduziertes Screening-Tool zu extrahieren. Dieses soll ausschliesslich auf non-invasiven Basisparametern beruhen und sich an den aktuellen Triage-Leitlinien der European Society of Cardiology (ESC) orientieren. Das finale Modell wird schliesslich in einen Prototyp eines interaktiven Clinical Decision Support Systems (CDSS) überführt.
+Um diese Frage zu beantworten, verfolgt die vorliegende Arbeit ein zweistufiges Ziel: Im ersten Schritt wird anhand des historischen "Cleveland Heart Disease"-Datensatzes ein statistisch optimiertes Klassifikationsmodell (logistische Regression) entwickelt und evaluiert. Im zweiten Schritt liegt der Fokus auf der praktischen Translation: Ziel ist es, aus den statistischen Erkenntnissen ein praxistaugliches, Screening-Tool zu extrahieren. Dieses soll ausschliesslich auf einfach zu erfassenden Basisparametern beruhen und sich an den aktuellen Triage-Leitlinien der European Society of Cardiology (ESC) orientieren. Das finale Modell wird schliesslich in einen Prototyp eines interaktiven Clinical Decision Support Systems (CDSS) überführt.
 
 # Datengrundlage & Datenaufbereitung
 
-Für die vorliegende Analyse wurde der renommierte "Cleveland Heart Disease"-Datensatz aus dem UCI Machine Learning Repository herangezogen. Ursprünglich umfasste der Datensatz n = 303 Beobachtungen klinischer Patientendaten. Im Rahmen eines rigorosen Preprocessings wurden die Daten zunächst auf Inkonsistenzen und fehlende Werte (im Originaldatensatz teilweise als "?" kodiert) geprüft. Um Verzerrungen in den späteren Machine-Learning-Modellen zu vermeiden, wurden sechs unvollständige Fälle vollständig aus dem Datensatz entfernt (Listwise Deletion). Die finale, bereinigte Stichprobe für die Modellierung beläuft sich somit auf n = 297 Patienten.
+Für die vorliegende Analyse wurde der "Cleveland Heart Disease"-Datensatz aus dem UCI Machine Learning Repository herangezogen. Ursprünglich umfasste der Datensatz n = 303 Beobachtungen klinischer Patientendaten. Im Rahmen eines Preprocessings wurden die Daten zunächst auf Inkonsistenzen und fehlende Werte (im Originaldatensatz teilweise als "?" kodiert) geprüft. Um Verzerrungen in den späteren Machine-Learning-Modellen zu vermeiden, wurden sechs unvollständige Fälle vollständig aus dem Datensatz entfernt (Listwise Deletion). Die finale, bereinigte Stichprobe für die Modellierung beläuft sich somit auf n = 297 Patienten.
 
 Ein zentraler methodischer Schritt der Datenaufbereitung war die Transformation der abhängigen Zielvariable `num`. Im Originaldatensatz gibt diese den angiografischen Schweregrad der koronaren Herzkrankheit auf einer Skala von 0 (keine Gefässverengung) bis 4 (schwere Mehrgefässerkrankung) an. Für die Zwecke dieser Arbeit wurde diese multikategoriale Variable in eine binäre Klassifikation überführt: Der Wert 0 wurde als "gesund" (Klasse 0) beibehalten, während sämtliche Ausprägungen von 1 bis 4 unter der Klasse "krank" (Klasse 1) zusammengefasst wurden.
 
@@ -69,7 +69,7 @@ Der verwendete Cleveland-Datensatz umfasst nach der Bereinigung 14 klinisch rele
 
 ## Datenbereinigung im Code
 
-Code-Snippet
+Im folgenden code werden die Daten wie zuvor beschrieben bereinigt undd vorbereitet.
 
 ```{r}
 # 1. Daten laden
@@ -86,11 +86,11 @@ df_modell <- df %>%
   mutate(target = as.factor(ifelse(num > 0, "1", "0"))) %>%
   select(-num)
 
-# 4. Rigoroses Löschen aller fehlenden Werte für sauberes Machine Learning
+# 4. Löschen aller fehlenden Werte für sauberes Machine Learning
 df_modell <- na.omit(df_modell)
 
 # Kontrolle der Dimensionen (Erwartet: 297 Zeilen, 14 Spalten)
-dim(df_modell)
+#dim(df_modell)
 ```
 
 # Explorative Datenanalyse (EDA)
@@ -443,8 +443,6 @@ Um die praktische Anwendbarkeit des entwickelten Gatekeeper-Modells zu demonstri
 Der Anwender kann die sechs identifizierten Basisparameter über intuitive Schieberegler und Dropdown-Menüs eingeben. Im Hintergrund berechnet das logistische Regressionsmodell in Echtzeit die Pre-Test Probability (PTP) für das Vorliegen einer KHK. Basierend auf den implementierten ESC-Leitlinien übersetzt die Applikation diese Wahrscheinlichkeit direkt in eine Handlungsempfehlung. Das Tool schlägt somit erfolgreich die Brücke zwischen prädiktiver statistischer Modellierung und der patientennahen Triage.
 
 ```{r}
-library(shiny)
-
 # Nutzt 'modell_screening' aus dem Environment
 ui <- fluidPage(
   titlePanel("KHK-Screening-Tool"),
@@ -452,10 +450,15 @@ ui <- fluidPage(
     sidebarPanel(
       numericInput("age", "Alter:", value = 50, min = 20, max = 100),
       selectInput("sex", "Geschlecht:", choices = list("Weiblich" = 0, "Männlich" = 1)),
-      selectInput("cp", "Brustschmerztyp (1-4):", min = 1, max = 4, value = 1),
+      selectInput("cp", "Brustschmerztyp:", 
+                  choices = list("1: Typische Angina" = 1, 
+                                 "2: Atypische Angina" = 2, 
+                                 "3: Nicht-anginöser Schmerz" = 3, 
+                                 "4: Asymptomatisch" = 4), 
+                  selected = 1),
       sliderInput("trestbps", "Ruheblutdruck:", min = 90, max = 200, value = 120),
       sliderInput("chol", "Cholesterin:", min = 100, max = 400, value = 200),
-      selectInput("fbs", "Blutzucker > 120:", choices = list("Nein" = 0, "Ja" = 1))
+      selectInput("fbs", "Blutzucker > 120 mg/dl:", choices = list("Nein" = 0, "Ja" = 1))
     ),
     mainPanel(
       h3("Ergebnis nach ESC-Guidelines"),
@@ -470,8 +473,12 @@ ui <- fluidPage(
 server <- function(input, output) {
   vorhersage <- reactive({
     neuer_patient <- data.frame(
-      age = input$age, sex = as.numeric(input$sex), cp = input$cp,
-      trestbps = input$trestbps, chol = input$chol, fbs = as.numeric(input$fbs)
+      age = input$age, 
+      sex = as.numeric(input$sex), 
+      cp = as.numeric(input$cp),
+      trestbps = input$trestbps, 
+      chol = input$chol, 
+      fbs = as.numeric(input$fbs)
     )
     predict(modell_screening, newdata = neuer_patient, type = "response")
   })
@@ -485,6 +492,7 @@ server <- function(input, output) {
     return("HOHES RISIKO: Direkte Überweisung zum Kardiologen.")
   })
 }
+
 shinyApp(ui, server)
 ```
 
