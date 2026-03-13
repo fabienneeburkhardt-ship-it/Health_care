@@ -326,14 +326,11 @@ print("--- Random Forest (10-Fold CV) ---")
 print(cv_rf$results[cv_rf$results$mtry == 2, ])
 ```
 
-**Robustheitsprüfung mittels Kreuzvalidierung**
-Um die prädiktive Güte methodisch abzusichern und eine Verzerrung durch eine zufällig vorteilhafte Datenaufteilung (Overfitting an den spezifischen Train-Test-Split) auszuschliessen, wurde das reduzierte 9-Variablen-Modell einer 10-fachen Kreuzvalidierung (10-Fold Cross-Validation) unterzogen. Über alle zehn Folds hinweg erzielt die logistische Regression eine durchschnittliche Gesamtgenauigkeit (Accuracy) von 84.2 % sowie einen soliden Cohens-Kappa-Wert von 0.68. Dies bestätigt die hohe Stabilität und Generalisierbarkeit des Regressionsmodells auf ungesehene Patientendaten.
+**Robustheitsprüfung mittels Kreuzvalidierung** Um die prädiktive Güte methodisch abzusichern und eine Verzerrung durch eine zufällig vorteilhafte Datenaufteilung (Overfitting an den spezifischen Train-Test-Split) auszuschliessen, wurde das reduzierte 9-Variablen-Modell einer 10-fachen Kreuzvalidierung (10-Fold Cross-Validation) unterzogen. Über alle zehn Folds hinweg erzielt die logistische Regression eine durchschnittliche Gesamtgenauigkeit (Accuracy) von 84.2 % sowie einen soliden Cohens-Kappa-Wert von 0.68. Dies bestätigt die hohe Stabilität und Generalisierbarkeit des Regressionsmodells auf ungesehene Patientendaten.
 
-**Machine-Learning-Vergleich: Logistische Regression vs. Random Forest**
-Abschliessend wurde das klassische statistische Verfahren dem modernen Ensemble-Lernalgorithmus Random Forest gegenübergestellt. Unter identischen Resampling-Bedingungen (10-Fold CV) erzielt der Random Forest (bei einem optimierten Hyperparameter von `mtry = 2`) eine Accuracy von 83.9 % und einen Kappa-Wert von 0.67. Der baumbasierte Algorithmus erbringt folglich keine signifikante Leistungssteigerung gegenüber dem linearen Verfahren.
+**Machine-Learning-Vergleich: Logistische Regression vs. Random Forest** Abschliessend wurde das klassische statistische Verfahren dem modernen Ensemble-Lernalgorithmus Random Forest gegenübergestellt. Unter identischen Resampling-Bedingungen (10-Fold CV) erzielt der Random Forest (bei einem optimierten Hyperparameter von `mtry = 2`) eine Accuracy von 83.9 % und einen Kappa-Wert von 0.67. Der baumbasierte Algorithmus erbringt folglich keine signifikante Leistungssteigerung gegenüber dem linearen Verfahren.
 
-**Medizinisch-klinische Schlussfolgerung**
-Im Kontext eines Clinical Decision Support Systems (CDSS) ist dieses Ergebnis hochrelevant. Der Random Forest agiert als intransparentes "Black-Box"-Modell, dessen innere Entscheidungswege (welcher Baum trifft welche Entscheidung) für das medizinische Personal kaum nachvollziehbar sind. Die logistische Regression bietet hingegen als "White-Box"-Verfahren volle Transparenz (Explainable AI): Der Einfluss jedes Prädiktors lässt sich exakt quantifizieren (via Koeffizienten und Odds Ratios). Da die logistische Regression dem komplexeren Machine-Learning-Algorithmus prädiktiv ebenbürtig – hier sogar marginal überlegen – ist, qualifiziert sie sich aufgrund ihrer hohen Interpretierbarkeit eindeutig als das methodisch überlegene Verfahren für die translationale Anwendung in der ärztlichen Primärversorgung.
+**Medizinisch-klinische Schlussfolgerung** Im Kontext eines Clinical Decision Support Systems (CDSS) ist dieses Ergebnis hochrelevant. Der Random Forest agiert als intransparentes "Black-Box"-Modell, dessen innere Entscheidungswege (welcher Baum trifft welche Entscheidung) für das medizinische Personal kaum nachvollziehbar sind. Die logistische Regression bietet hingegen als "White-Box"-Verfahren volle Transparenz (Explainable AI): Der Einfluss jedes Prädiktors lässt sich exakt quantifizieren (via Koeffizienten und Odds Ratios). Da die logistische Regression dem komplexeren Machine-Learning-Algorithmus prädiktiv ebenbürtig – hier sogar marginal überlegen – ist, qualifiziert sie sich aufgrund ihrer hohen Interpretierbarkeit eindeutig als das methodisch überlegene Verfahren für die translationale Anwendung in der ärztlichen Primärversorgung.
 
 # Transfer in die klinische Praxis: Das Screening-Modell
 
@@ -389,11 +386,9 @@ print("ESC-Triage-System angewendet auf den Testdatensatz:")
 print(triage_ergebnisse)
 ```
 
-**Evaluation des non-invasiven Screening-Modells (Cut-off: 10 %)**
-Das primäre Ziel eines Hausarzt-Gatekeeper-Modells ist die absolute Vermeidung von falsch-negativen Diagnosen (übersehenen Herzerkrankungen). Durch die drastische Absenkung des Entscheidungsschwellenwerts auf sehr konservative 10 % erreicht das reduzierte 6-Variablen-Modell auf dem Testdatensatz eine makellose Sensitivität von 100 %. Sämtliche erkrankten Patienten wurden vom Algorithmus korrekt als potenziell gefährdet identifiziert. Dieser maximale Sicherheitsgewinn resultiert zwangsläufig in einer sehr geringen Spezifität (13.6 %), was im klinischen Kontext eines reinen Ausschluss-Tests (Rule-out) jedoch absolut vertretbar ist, da falsch-positive Ergebnisse lediglich zu weiteren Abklärungen führen.
+**Evaluation des non-invasiven Screening-Modells (Cut-off: 10 %)** Das primäre Ziel eines Hausarzt-Gatekeeper-Modells ist die absolute Vermeidung von falsch-negativen Diagnosen (übersehenen Herzerkrankungen). Durch die drastische Absenkung des Entscheidungsschwellenwerts auf sehr konservative 10 % erreicht das reduzierte 6-Variablen-Modell auf dem Testdatensatz eine makellose Sensitivität von 100 %. Sämtliche erkrankten Patienten wurden vom Algorithmus korrekt als potenziell gefährdet identifiziert. Dieser maximale Sicherheitsgewinn resultiert zwangsläufig in einer sehr geringen Spezifität (13.6 %), was im klinischen Kontext eines reinen Ausschluss-Tests (Rule-out) jedoch absolut vertretbar ist, da falsch-positive Ergebnisse lediglich zu weiteren Abklärungen führen.
 
-**Klinische Stratifizierung nach ESC-Leitlinien (Triage)**
-Um die modellierten Vorhersagewahrscheinlichkeiten (Pre-Test Probability) direkt in den Versorgungsalltag zu integrieren, wurden die Ergebnisse gemäss den offiziellen Triage-Pfaden der European Society of Cardiology (ESC) in drei Risikogruppen stratifiziert. Die Anwendung auf den Testdatensatz demonstriert den massiven klinischen und gesundheitsökonomischen Nutzen des Systems:
+**Klinische Stratifizierung nach ESC-Leitlinien (Triage)** Um die modellierten Vorhersagewahrscheinlichkeiten (Pre-Test Probability) direkt in den Versorgungsalltag zu integrieren, wurden die Ergebnisse gemäss den offiziellen Triage-Pfaden der European Society of Cardiology (ESC) in drei Risikogruppen stratifiziert. Die Anwendung auf den Testdatensatz demonstriert den massiven klinischen und gesundheitsökonomischen Nutzen des Systems:
 
 1.  **Niedriges Risiko (\< 15 % - Rule-out):** Das Modell stufte 10 Patienten in diese Kategorie ein. Tatsächlich waren alle 10 Patienten herzgesund (0 falsch-negative Fälle). Diese Personen können mit extrem hoher Sicherheit direkt nach Hause entlassen werden, was das Gesundheitssystem signifikant entlastet und den Patienten unnötige Ängste und Untersuchungen erspart.
 
@@ -433,8 +428,7 @@ print("--- ERGEBNISSE NACH 100 SIMULATIONEN (ESC Rule-out bei 15%) ---")
 print(ergebnisse_mc)
 ```
 
-**Robustheitsprüfung durch Monte-Carlo-Simulation**
-Um methodisch abzusichern, dass die makellose Sensitivität des zuvor evaluierten Screening-Modells nicht auf einer zufällig vorteilhaften Datenaufteilung (Lucky Split) basiert, wurde das 6-Variablen-Modell einer Monte-Carlo-Simulation mit 100 Iterationen unterzogen. Durch das hundertfache, zufällige Neuaufteilen (Resampling) der Trainings- und Testdaten wird der Algorithmus einem rigorosen Stresstest unterzogen.
+**Robustheitsprüfung durch Monte-Carlo-Simulation** Um methodisch abzusichern, dass die makellose Sensitivität des zuvor evaluierten Screening-Modells nicht auf einer zufällig vorteilhaften Datenaufteilung (Lucky Split) basiert, wurde das 6-Variablen-Modell einer Monte-Carlo-Simulation mit 100 Iterationen unterzogen. Durch das hundertfache, zufällige Neuaufteilen (Resampling) der Trainings- und Testdaten wird der Algorithmus einem rigorosen Stresstest unterzogen.
 
 Die Evaluation am konservativen ESC-Rule-out-Schwellenwert (\< 15 % KHK-Wahrscheinlichkeit) belegt die hohe prädiktive Stabilität des entwickelten Gatekeeper-Tools: Über 100 völlig ungesehene Testdatensätze hinweg konvergiert die durchschnittliche Sensitivität bei hervorragenden 94.2 %. Das Modell beweist somit seine konstante, robuste Fähigkeit, lebensbedrohliche KHK-Fälle zuverlässig zu identifizieren und das Risiko falsch-negativer Triage-Entscheidungen zu minimieren.
 
@@ -451,14 +445,14 @@ Der Anwender kann die sechs identifizierten Basisparameter über intuitive Schie
 ```{r}
 library(shiny)
 
-# Nutzt das 'modell_screening' aus dem Environment
+# Nutzt 'modell_screening' aus dem Environment
 ui <- fluidPage(
-  titlePanel("KHK-Screening-Tool (Hausarzt-Triage)"),
+  titlePanel("KHK-Screening-Tool"),
   sidebarLayout(
     sidebarPanel(
       numericInput("age", "Alter:", value = 50, min = 20, max = 100),
       selectInput("sex", "Geschlecht:", choices = list("Weiblich" = 0, "Männlich" = 1)),
-      sliderInput("cp", "Brustschmerztyp (1-4):", min = 1, max = 4, value = 1),
+      selectInput("cp", "Brustschmerztyp (1-4):", min = 1, max = 4, value = 1),
       sliderInput("trestbps", "Ruheblutdruck:", min = 90, max = 200, value = 120),
       sliderInput("chol", "Cholesterin:", min = 100, max = 400, value = 200),
       selectInput("fbs", "Blutzucker > 120:", choices = list("Nein" = 0, "Ja" = 1))
@@ -486,9 +480,9 @@ server <- function(input, output) {
   
   output$triage_out <- renderText({
     p <- vorhersage()
-    if(p < 0.15) return("NIEDRIGES RISIKO: Keine weiteren Tests nötig (Rule-out).")
-    if(p <= 0.85) return("MITTLERES RISIKO: Nicht-invasive Bildgebung (z.B. Echo/MRI).")
-    return("HOHES RISIKO: Direkte Überweisung zur invasiven Koronarangiographie.")
+    if(p < 0.15) return("NIEDRIGES RISIKO: Keine weiteren Tests nötig.")
+    if(p <= 0.85) return("MITTLERES RISIKO: Weitere Abklärungen (z.B. Echo/MRI).")
+    return("HOHES RISIKO: Direkte Überweisung zum Kardiologen.")
   })
 }
 shinyApp(ui, server)
