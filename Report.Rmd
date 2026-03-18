@@ -1,18 +1,22 @@
 ---
 title: "Prädiktion der koronaren Herzkrankheit (KHK)"
-subtitle: "Statistische Modellierung und Entwicklung eines Screening-Tools"
 author: "Eure Namen / Gruppenname"
 date: "`r Sys.Date()`"
-output: 
+output:
+  html_document:
+    toc: true
+    toc_depth: '2'
+    df_print: paged
   pdf_document:
     toc: true
     toc_depth: 2
     number_sections: true
     latex_engine: xelatex
+subtitle: "Statistische Modellierung und Entwicklung eines Screening-Tools"
 fontsize: 12pt
 geometry: margin=2.54cm
 linestretch: 1.5
-mainfont: "Times New Roman"
+mainfont: Times New Roman
 ---
 
 ---
