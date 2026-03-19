@@ -90,7 +90,7 @@ Der verwendete Cleveland-Datensatz umfasst nach der Bereinigung 14 klinisch rele
 
 ## Datenbereinigung im Code
 
-Im folgenden code werden die Daten wie zuvor beschrieben bereinigt undd vorbereitet.
+Im folgenden code werden die Daten wie zuvor beschrieben bereinigt und vorbereitet.
 
 ```{r}
 # 1. Daten laden
