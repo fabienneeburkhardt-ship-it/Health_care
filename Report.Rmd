@@ -379,29 +379,27 @@ print(cv_rf$results[cv_rf$results$mtry == 2, ])
 
 **Medizinisch-klinische Schlussfolgerung** Im Kontext eines Clinical Decision Support Systems (CDSS) ist dieses Ergebnis hochrelevant. Der Random Forest agiert als intransparentes "Black-Box"-Modell, dessen innere Entscheidungswege (welcher Baum trifft welche Entscheidung) für das medizinische Personal kaum nachvollziehbar sind. Die logistische Regression bietet hingegen als "White-Box"-Verfahren volle Transparenz (Explainable AI): Der Einfluss jedes Prädiktors lässt sich exakt quantifizieren (via Koeffizienten und Odds Ratios). Da die logistische Regression dem komplexeren Machine-Learning-Algorithmus prädiktiv ebenbürtig, hier sogar marginal überlegen, ist, qualifiziert sie sich aufgrund ihrer hohen Interpretierbarkeit eindeutig als das methodisch überlegene Verfahren für die translationale Anwendung in der ärztlichen Primärversorgung.
 
-# Transfer in die klinische Praxis: Das Screening-Modell
+# 7 Transfer in die klinische Praxis: Das Screening-Modell
 
-Obwohl das entwickelte 9-Variablen-Modell eine exzellente Güte aufweist, stösst es in der Hausarztpraxis auf Limitierungen: Parameter wie Gefässverengung (`ca`) oder Szintigraphie (`thal`) setzen genau die invasiven Tests voraus, die vermieden werden sollen. Es bedarf eines "Gatekeeper"-Modells.
+Obwohl das entwickelte 9-Variablen-Modell eine exzellente Güte aufweist, stösst es in der Hausarztpraxis auf Limitierungen. Die Parameter wie die Anzahl verengter Hauptgefässe (ca) oder das Ergebnis der Thallium-Szintigraphie (thal) setzen jene invasiven Untersuchungen voraus, deren Notwendigkeit durch ein Screening-Modell erst ermittelt werden soll. Ein praxistaugliches Gatekeeper-Instrument muss sich daher auf Basisparameter beschränken, die im Erstkontakt ohne technischen Aufwand erhoben werden können.
 
-**Entwicklung des Hausarzt-Modells**
+Die Leitlinien der European Society of Cardiology (ESC) für Koronarsyndrome empfehlen seit 2024 ein stufenweises Vorgehen. Als erster Schritt, soll eine klinische Vorhersagewahrscheinlichkeit (auch PTP für Pre-Test Probability genannt), geschätzt werden durch einfache Parameter wie Alter, Geschlecht und Symptomcharakter, bevor andere aufwändigere Massnahmen eingeleitet werden. Zusätzlich werden Risikofaktoren wie Blutzucker und Blutdruck in diese Einschätzung mit einbezogen, jene Variablen, die auch im Hausarzt-Screening-Modell verwendet werden (Vrints et al., 2024).
 
-Es wurde ein stark reduziertes Modell trainiert, das sich auf sechs non-invasive Attribute stützt (Alter, Geschlecht, Ruheblutdruck, Brustschmerztyp, Cholesterin, Nüchternblutzucker). Da kein Fall übersehen werden darf, wurde der Cut-off extrem konservativ auf 10 % gesetzt. Dies resultiert am Testset in einer Sensitivität von 100 %.
+## 7.1 Entwicklung des Gatekeeper-Modells
 
-**ESC-konforme Triage**
+Es wurde ein stark reduziertes logistisches Regressionsmodell trainiert, das sich ausschliesslich auf sechs non-invasive Basisparameter fokussiert. Alter (age), Geschlecht (sex), Brustschmerztyp (cp), Ruheblutdruck (trestbps), Serumcholesterin (chol) und Nüchternblutzucker (fbs). Die Auswahl jener Variablen steht in einer typischen Hausarztpraxis zur Verfügung ohne jegliche Überweisungen oder Spezialtechnik und gilt seit Jahrzehnten als Grundlage der kardiovaskulären Risikobeurteilung (D’Agostino et al., 2008).
 
-Die Vorhersagen (Pre-Test Probability) wurden an die Leitlinien der European Society of Cardiology (ESC) angeglichen, um Patienten vollautomatisch in drei Pfade zu stratifizieren:
+Der Entscheidungsschwellenwert des Modelsl wurde bewusst auf 10% gesetzt, was deutlich niedriger ist als der übliche Wert von 50%. Grund dafür ist, dass es im Screening weniger problematisch ist jemanden als fälschlicherweise krank einzuschätzen (falsch-positiv), als eine tatsächliche Krankheit zu übersehen (falsch-negativ). Das Vorgehen nennt man in der Literatur Rule-out-Strategie und entspricht den Leitlinien der ESC (Vrints et al., 2024).
 
-1.  **Niedrig (\< 15 %):** Keine weiteren Tests (Rule-out).
+Die Auswertung des Modells zeigt, dass dieser Entscheid gut funktioniert. Bei einem Schwellenwert von 10%, erreicht es eine Sensitivität von 100% was bedeutet, dass das Modell alle erkrankten Patienten korrekt erkennt. Trotz einer hohen Sensitivität ist die Spezifität niedrig mit einem Prozentsatz von 13.6%. Dies heisst, dass auch viele gesunde Personen fälschlich als Risikofall eingestuft werden. Jedoch wurde das bewusst in Kauf genommen und ist klinisch vertretbar, da falsch-positive Auswertungen lediglich zu weiterer Abklärung führen.
 
-2.  **Mittel (15 - 85 %):** Überweisung für nicht-invasive Bildgebung.
+## 7.2 ESC-konforme Triage Stratifizierung
 
-3.  **Hoch (\> 85 %):** Direkte Überweisung zum Herzkatheter (Rule-in).
+Um die Vorhersagewahrscheinlichkeiten direkt in die klinische Praxis zu übersetzen, wurden die Ergebnisse gemäss den aktuellen aktuellen ESC-CCS-Leitlinien in drei Risikopfade stratifiziert (Vrints et al., 2024):
 
-**Monte-Carlo-Simulation**
-
-Eine 100-fache Monte-Carlo-Simulation beweist abschliessend die statistische Stabilität: Im Durchschnitt stabilisierte sich die Sensitivität bei hervorragenden 94.2 %, bei einer minimalen Fehlerrate von ca. 2.5 übersehenen Patienten pro Testset, was den tolerierten ESC-Richtlinien entspricht.
-
-## Gatekeeper-Modell & ESC-Triage
+1.	**Niedrig (< 15 %)**: Keine weiteren Tests (Rule-out)
+2.	**Mittel (15–85 %)**: Nicht-invasive Bildgebung
+3.	**Hoch (> 85 %)**: Direkte invasive Abklärung (Rule-in)
 
 ```{r}
 # Daten für das Screening-Modell (nur 6 Variablen!)
@@ -458,17 +456,13 @@ heatmap_scr <- ggplot(data = cm_daten_scr, aes(x = Referenz, y = Vorhersage, fil
 print(heatmap_scr)
 ```
 
-**Evaluation des non-invasiven Screening-Modells (Cut-off: 10 %)** Das primäre Ziel eines Hausarzt-Gatekeeper-Modells ist die absolute Vermeidung von falsch-negativen Diagnosen (übersehenen Herzerkrankungen). Durch die drastische Absenkung des Entscheidungsschwellenwerts auf sehr konservative 10 % erreicht das reduzierte 6-Variablen-Modell auf dem Testdatensatz eine makellose Sensitivität von 100 %. Sämtliche erkrankten Patienten wurden vom Algorithmus korrekt als potenziell gefährdet identifiziert. Dieser maximale Sicherheitsgewinn resultiert zwangsläufig in einer sehr geringen Spezifität (13.6 %), was im klinischen Kontext eines reinen Ausschluss-Tests (Rule-out) jedoch absolut vertretbar ist, da falsch-positive Ergebnisse lediglich zu weiteren Abklärungen führen.
+1.  **Niedrig (\< 15 %):** Keine weiteren Tests (Rule-out): Das Modell stufte 10 Patienten in diese Kategorie ein. Alle Patienten waren tatsächlich herzgesund und können bei einer Untersuchung bei einer Hausarztpraxis mit gutem Gewissen und ohne weitere Abklärungen entlassen werden.
 
-**Klinische Stratifizierung nach ESC-Leitlinien (Triage)** Um die modellierten Vorhersagewahrscheinlichkeiten (Pre-Test Probability) direkt in den Versorgungsalltag zu integrieren, wurden die Ergebnisse gemäss den offiziellen Triage-Pfaden der European Society of Cardiology (ESC) in drei Risikogruppen stratifiziert. Die Anwendung auf den Testdatensatz demonstriert den massiven klinischen und gesundheitsökonomischen Nutzen des Systems:
+2.  **Mittel (15 - 85 %):** Überweisung für nicht-invasive Bildgebung: Dies ist die grösste Gruppe mit 59 Patienten von denen 18 tatsächlich erkrankt sind. Laut den ESC-Leitlinien wird empfohlen, dass eine Computertomographie-Angiographie (CCTA) ausgeführt wird um eine obstruktive KHK auszuschliessen (Vrints et al., 2024).
 
-1.  **Niedriges Risiko (\< 15 % - Rule-out):** Das Modell stufte 10 Patienten in diese Kategorie ein. Tatsächlich waren alle 10 Patienten herzgesund (0 falsch-negative Fälle). Diese Personen können mit extrem hoher Sicherheit direkt nach Hause entlassen werden, was das Gesundheitssystem signifikant entlastet und den Patienten unnötige Ängste und Untersuchungen erspart.
+3.  **Hoch (\> 85 %):** Direkte Überweisung zum Herzkatheter (Rule-in): Die Gruppe enthält 21 Patienten von denen 13 tatsächlich erkrankt sind wobei diese direkt zu einer invasiven Koronarangiographie zugeführt werden können.
 
-2.  **Mittleres Risiko (15 % bis 85 % - Bildgebung):** Die grösste Gruppe (59 Personen) fällt in diesen ambivalenten Bereich. Das Modell agiert hier als korrekter Filter und überweist diese Patienten (darunter 18 tatsächlich Erkrankte) zielgerichtet zur weiteren nicht-invasiven Diagnostik (z.B. Stress-Echokardiographie).
-
-3.  **Hohes Risiko (\> 85 % - Rule-in):** 21 Patienten wiesen eine so hohe Modellwahrscheinlichkeit auf, dass sie direkt dem High-Risk-Pfad zugeordnet wurden. Die 13 tatsächlich schwer erkrankten Patienten in dieser Gruppe profitieren massiv von dieser Zuweisung, da sie ohne zeitliche Verzögerung direkt der invasiven Koronarangiographie (Herzkatheter) zugeführt werden.
-
-## 100-fache Monte-Carlo-Simulation
+## 7.3 Robustheitsprüfung durch Monte-Carlo-Simulation
 
 ```{r}
 n_sim <- 100
@@ -500,9 +494,9 @@ print("--- ERGEBNISSE NACH 100 SIMULATIONEN (ESC Rule-out bei 15%) ---")
 print(ergebnisse_mc)
 ```
 
-**Robustheitsprüfung durch Monte-Carlo-Simulation** Um methodisch abzusichern, dass die makellose Sensitivität des zuvor evaluierten Screening-Modells nicht auf einer zufällig vorteilhaften Datenaufteilung (Lucky Split) basiert, wurde das 6-Variablen-Modell einer Monte-Carlo-Simulation mit 100 Iterationen unterzogen. Durch das hundertfache, zufällige Neuaufteilen (Resampling) der Trainings- und Testdaten wird der Algorithmus einem rigorosen Stresstest unterzogen.
+Um methodisch abzusichern, dass die makellose Sensitivität des zuvor evaluierten Screening-Modells nicht auf einer zufällig vorteilhaften Datenaufteilung (Lucky Split) basiert, wurde das 6-Variablen-Modell einer Monte-Carlo-Simulation mit 100 Iterationen unterzogen. Durch das Hundertfache, zufällige Neuaufteilen (Resampling) der Trainings- und Testdaten wird der Algorithmus einem rigorosen Stresstest unterzogen (Kuhn, 2019).
 
-Die Evaluation am konservativen ESC-Rule-out-Schwellenwert (\< 15 % KHK-Wahrscheinlichkeit) belegt die hohe prädiktive Stabilität des entwickelten Gatekeeper-Tools: Über 100 völlig ungesehene Testdatensätze hinweg konvergiert die durchschnittliche Sensitivität bei hervorragenden 94.2 %. Das Modell beweist somit seine konstante, robuste Fähigkeit, lebensbedrohliche KHK-Fälle zuverlässig zu identifizieren und das Risiko falsch-negativer Triage-Entscheidungen zu minimieren.
+Die Evaluation am konservativen ESC-Rule-out-Schwellenwert (\< 15 % KHK-Wahrscheinlichkeit) belegt die hohe prädiktive Stabilität des entwickelten Gatekeeper-Tools: Über 100 völlig ungesehene Testdatensätze hinweg konvergiert die durchschnittliche Sensitivität bei hervorragenden 94.2 %. Im Mittel werden dabei weniger als 2.5 erkrankte Patienten pro Testset nicht erkannt. Das Modell beweist somit seine konstante, robuste Fähigkeit, lebensbedrohliche KHK-Fälle zuverlässig zu identifizieren und das Risiko falsch-negativer Triage-Entscheidungen zu minimieren (Altman & Bland, 1994).
 
 Parallel dazu stabilisiert sich die durchschnittliche Spezifität bei 34.1 %. Das bedeutet, dass das Modell über alle Simulationsdurchläufe hinweg im Mittel über ein Drittel der herzgesunden Personen sicher und korrekt aus dem klinischen Pfad ausschliesst. Diese Werte bestätigen den angestrebten medizinischen und gesundheitsökonomischen Nutzen vollumfänglich: Das Modell agiert als sicherer, non-invasiver Filter in der hausärztlichen Primärversorgung.
 
