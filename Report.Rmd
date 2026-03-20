@@ -2,28 +2,6 @@
 title: "Prädiktion der koronaren Herzkrankheit (KHK)"
 author: "Fabian Bieri, Vincent Herger, Jessica Herzog, Fabienne Burkhardt"
 date: "`r Sys.Date()`"
-output:
-  html_document:
-    toc: true
-    toc_depth: '2'
-    df_print: paged
-  pdf_document:
-    toc: true
-    toc_depth: 2
-    number_sections: true
-    latex_engine: xelatex
-subtitle: "Statistische Modellierung und Entwicklung eines Screening-Tools"
-fontsize: 12pt
-geometry: margin=2.54cm
-linestretch: 1.5
-mainfont: Times New Roman
----
-
----
-title: "Prädiktion der koronaren Herzkrankheit (KHK)"
-subtitle: "Statistische Modellierung und Entwicklung eines Screening-Tools"
-author: "Fabian Bieri, Vincent Herger, Jessica Herzog, Fabienne Burkhardt"
-date: "`r Sys.Date()`"
 output: 
   html_document:
     toc: true
@@ -33,6 +11,8 @@ output:
     theme: flatly
     code_folding: hide
 ---
+
+
 
 ```{r setup, include=FALSE}
 # Grundeinstellungen für das gesamte Dokument
@@ -434,8 +414,8 @@ test_data_scr  <- df_screening[-train_index, ]
 modell_screening <- glm(target ~ ., data = train_data_scr, family = "binomial")
 wahrscheinlichkeiten_scr <- predict(modell_screening, newdata = test_data_scr, type = "response")
 
-# Schwellenwert 10% für maximale Sensitivität
-vorhersagen_fakt_scr <- factor(ifelse(wahrscheinlichkeiten_scr > 0.10, "1", "0"), levels = levels(test_data_scr$target))
+# Schwellenwert 15% für maximale Sensitivität
+vorhersagen_fakt_scr <- factor(ifelse(wahrscheinlichkeiten_scr > 0.15, "1", "0"), levels = levels(test_data_scr$target))
 
 matrix_screening <- confusionMatrix(data = vorhersagen_fakt_scr, reference = test_data_scr$target, positive = "1")
 print("Performance des 6-Variablen-Screening-Modells (Cut-off 10%):")
@@ -451,6 +431,31 @@ esc_triage <- cut(wahrscheinlichkeiten_scr,
 triage_ergebnisse <- table(Vorhersage = esc_triage, Tatsaechliche_Diagnose = test_data_scr$target)
 print("ESC-Triage-System angewendet auf den Testdatensatz:")
 print(triage_ergebnisse)
+# --- Visuelle Konfusionsmatrix (Heatmap) für das Screening-Modell ---
+
+# 1. Daten aus der bereits berechneten 'matrix_screening' extrahieren
+cm_daten_scr <- as.data.frame(matrix_screening$table)
+colnames(cm_daten_scr) <- c("Vorhersage", "Referenz", "Anzahl")
+
+# 2. Heatmap generieren (im gleichen Design wie in Kapitel 5)
+heatmap_scr <- ggplot(data = cm_daten_scr, aes(x = Referenz, y = Vorhersage, fill = Anzahl)) +
+  geom_tile(color = "white", linewidth = 1.5) +
+  scale_fill_gradient(low = "#e0f3f8", high = "#313695", name = "Patienten") +
+  geom_text(aes(label = Anzahl), 
+            color = ifelse(cm_daten_scr$Anzahl > 10, "white", "black"), 
+            size = 8, fontface = "bold") +
+  theme_minimal() +
+  labs(title = "Klassifikationsleistung: Gatekeeper-Modell",
+       subtitle = "Vorhersage vs. Tatsächliche Diagnose (ESC Cut-off: 15%)",
+       x = "Tatsächliche Diagnose (0 = Gesund, 1 = Krank)",
+       y = "Modell-Vorhersage") +
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 14, face = "bold"),
+        plot.title = element_text(size = 14, face = "bold"),
+        panel.grid = element_blank())
+
+# Plot im Dokument anzeigen
+print(heatmap_scr)
 ```
 
 **Evaluation des non-invasiven Screening-Modells (Cut-off: 10 %)** Das primäre Ziel eines Hausarzt-Gatekeeper-Modells ist die absolute Vermeidung von falsch-negativen Diagnosen (übersehenen Herzerkrankungen). Durch die drastische Absenkung des Entscheidungsschwellenwerts auf sehr konservative 10 % erreicht das reduzierte 6-Variablen-Modell auf dem Testdatensatz eine makellose Sensitivität von 100 %. Sämtliche erkrankten Patienten wurden vom Algorithmus korrekt als potenziell gefährdet identifiziert. Dieser maximale Sicherheitsgewinn resultiert zwangsläufig in einer sehr geringen Spezifität (13.6 %), was im klinischen Kontext eines reinen Ausschluss-Tests (Rule-out) jedoch absolut vertretbar ist, da falsch-positive Ergebnisse lediglich zu weiteren Abklärungen führen.
