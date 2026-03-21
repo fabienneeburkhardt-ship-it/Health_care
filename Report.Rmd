@@ -387,9 +387,20 @@ Die Leitlinien der European Society of Cardiology (ESC) für Koronarsyndrome emp
 
 Es wurde ein stark reduziertes logistisches Regressionsmodell trainiert, das sich ausschliesslich auf sechs non-invasive Basisparameter fokussiert. Alter (age), Geschlecht (sex), Brustschmerztyp (cp), Ruheblutdruck (trestbps), Serumcholesterin (chol) und Nüchternblutzucker (fbs). Die Auswahl jener Variablen steht in einer typischen Hausarztpraxis zur Verfügung ohne jegliche Überweisungen oder Spezialtechnik und gilt seit Jahrzehnten als Grundlage der kardiovaskulären Risikobeurteilung (D’Agostino et al., 2008).
 
-Der Entscheidungsschwellenwert des Modelsl wurde bewusst auf 10% gesetzt, was deutlich niedriger ist als der übliche Wert von 50%. Grund dafür ist, dass es im Screening weniger problematisch ist jemanden als fälschlicherweise krank einzuschätzen (falsch-positiv), als eine tatsächliche Krankheit zu übersehen (falsch-negativ). Das Vorgehen nennt man in der Literatur Rule-out-Strategie und entspricht den Leitlinien der ESC (Vrints et al., 2024).
+Der Entscheidungsschwellenwert des Models wurde bewusst auf 15% gesetzt, was deutlich niedriger ist als der übliche Wert von 50%. Grund dafür ist, dass es im Screening weniger problematisch ist jemanden als fälschlicherweise krank einzuschätzen (falsch-positiv), als eine tatsächliche Krankheit zu übersehen (falsch-negativ). Das Vorgehen nennt man in der Literatur Rule-out-Strategie und entspricht den Leitlinien der ESC (Vrints et al., 2024).
 
-Die Auswertung des Modells zeigt, dass dieser Entscheid gut funktioniert. Bei einem Schwellenwert von 10%, erreicht es eine Sensitivität von 100% was bedeutet, dass das Modell alle erkrankten Patienten korrekt erkennt. Trotz einer hohen Sensitivität ist die Spezifität niedrig mit einem Prozentsatz von 13.6%. Dies heisst, dass auch viele gesunde Personen fälschlich als Risikofall eingestuft werden. Jedoch wurde das bewusst in Kauf genommen und ist klinisch vertretbar, da falsch-positive Auswertungen lediglich zu weiterer Abklärung führen.
+Die Auswertung des Modells zeigt, dass dieser Entscheid gut funktioniert. Bei einem Schwellenwert von 15%, erreicht es eine Sensitivität von 100%
+was bedeutet, dass das Modell alle erkrankten Patienten korrekt erkennt.
+Dies geht erwartungsgemäss mit einer niedrigen Spezifität von 16.9%
+einher. Dies heisst, dass auch viele gesunde Personen fälschlich als
+Risikofall eingestuft werden. Im Kontest des Screening-Modells ist dies
+jedoch kein Widerspruch. Das Ziel ist nicht eine abschliessende Diagnose,
+sondern eine ESC-konforme Ersteinstufung in drei Risikopfade. Dies wurde
+also bewusst in Kauf genommen, da falsch-positive Befunde zwar zu weiterer
+Abklärung und vorübergehender psychologischer Belastung führen können, die
+potenziellen Konsequenzen einer übersehenen KHK jedoch schwerer wiegen.
+Das Modell agiert damit bewusst als konservativer, non-invasiver Filter,
+dessen primäre Aufgabe das sichere Ausschlussverfahren (Rule-out) ist.
 
 ## 7.2 ESC-konforme Triage Stratifizierung
 
@@ -414,7 +425,7 @@ wahrscheinlichkeiten_scr <- predict(modell_screening, newdata = test_data_scr, t
 vorhersagen_fakt_scr <- factor(ifelse(wahrscheinlichkeiten_scr > 0.15, "1", "0"), levels = levels(test_data_scr$target))
 
 matrix_screening <- confusionMatrix(data = vorhersagen_fakt_scr, reference = test_data_scr$target, positive = "1")
-print("Performance des 6-Variablen-Screening-Modells (Cut-off 10%):")
+print("Performance des 6-Variablen-Screening-Modells (Cut-off 15%):")
 print(matrix_screening$byClass[c("Sensitivity", "Specificity")])
 
 # ESC Triage System
