@@ -1,8 +1,10 @@
-
-#saveRDS(modell_screening, file = "modell_screening.rds")
-
 library(shiny)
-# Nutzt 'modell_screening' aus dem Environment
+
+# WICHTIG: Hier laden wir das gespeicherte Modell in die App!
+# Die Datei "modell_screening.rds" MUSS im selben Ordner wie diese app.R liegen.
+modell_screening <- readRDS("modell_screening.rds")
+
+
 ui <- fluidPage(
   titlePanel("KHK-Screening-Tool"),
   sidebarLayout(
@@ -39,6 +41,8 @@ server <- function(input, output) {
       chol = input$chol, 
       fbs = as.numeric(input$fbs)
     )
+    
+    # Hier nutzt er nun das geladene 'modell_screening'
     predict(modell_screening, newdata = neuer_patient, type = "response")
   })
   
