@@ -274,6 +274,9 @@ vorhersagen_fakt <- factor(vorhersagen_klassen, levels = levels(test_data$target
 # 3. Konfusionsmatrix BERECHNEN 
 konfusionsmatrix <- confusionMatrix(data = vorhersagen_fakt, reference = test_data$target, positive = "1")
 
+# Standard-Output anzeigen
+print(konfusionsmatrix)
+
 # 4. Direkt danach die Heatmap BAUEN
 cm_daten <- as.data.frame(konfusionsmatrix$table)
 colnames(cm_daten) <- c("Vorhersage", "Referenz", "Anzahl")
@@ -347,9 +350,10 @@ Dieser essenzielle Sicherheitsgewinn geht mathematisch zwingend zulasten der Spe
 
 # 6 Methoden-Stresstest: Kreuzvalidierung & Machine Learning
 
-Um auszuschliessen, dass die Metriken lediglich das Resultat einer zufällig vorteilhaften Aufteilung ("Lucky Split") sind, wurde eine 10-fache Kreuzvalidierung (Cross-Validation) über den gesamten Datensatz durchgeführt. Hierbei bestätigte das logistische Regressionsmodell seine Stabilität mit einer Accuracy von 84.2 %.
+**Robustheitsprüfung mittels Kreuzvalidierung** Um die prädiktive Güte methodisch abzusichern und eine Verzerrung durch eine zufällig vorteilhafte Datenaufteilung (Overfitting an den spezifischen Train-Test-Split) auszuschliessen, wurde das reduzierte 9-Variablen-Modell einer 10-fachen Kreuzvalidierung (10-Fold Cross-Validation) unterzogen. Über alle zehn Folds hinweg erzielt die logistische Regression eine durchschnittliche Gesamtgenauigkeit (Accuracy) von 84.2 % sowie einen soliden Cohens-Kappa-Wert von 0.68. Dies bestätigt die hohe Stabilität und Generalisierbarkeit des Regressionsmodells auf ungesehene Patientendaten.
 
-Abschliessend wurde die logistische Regression dem modernen Machine-Learning-Algorithmus Random Forest gegenübergestellt. Die Ergebnisse zeigen, dass der Random Forest keine signifikante Leistungssteigerung erbringt. Da die logistische Regression als "White-Box"-Modell (Explainable AI) interpretierbare Koeffizienten liefert, qualifiziert sie sich als das überlegene Verfahren für die medizinische Praxis.
+**Machine-Learning-Vergleich: Logistische Regression vs. Random Forest** Abschliessend wurde das klassische statistische Verfahren dem modernen Ensemble-Lernalgorithmus Random Forest gegenübergestellt. Unter identischen Resampling-Bedingungen (10-Fold CV) erzielt der Random Forest (bei einem optimierten Hyperparameter von `mtry = 2`) eine Accuracy von 83.9 % und einen Kappa-Wert von 0.67. Der baumbasierte Algorithmus erbringt folglich keine signifikante Leistungssteigerung gegenüber dem linearen Verfahren.
+
 
 ```{r}
 train_kontrolle <- trainControl(method = "cv", number = 10)
@@ -366,11 +370,6 @@ cv_rf <- train(target ~ ., data = df_modell, method = "rf", trControl = train_ko
 print("--- Random Forest (10-Fold CV) ---")
 print(cv_rf$results[cv_rf$results$mtry == 2, ])
 ```
-
-
-**Robustheitsprüfung mittels Kreuzvalidierung** Um die prädiktive Güte methodisch abzusichern und eine Verzerrung durch eine zufällig vorteilhafte Datenaufteilung (Overfitting an den spezifischen Train-Test-Split) auszuschliessen, wurde das reduzierte 9-Variablen-Modell einer 10-fachen Kreuzvalidierung (10-Fold Cross-Validation) unterzogen. Über alle zehn Folds hinweg erzielt die logistische Regression eine durchschnittliche Gesamtgenauigkeit (Accuracy) von 84.2 % sowie einen soliden Cohens-Kappa-Wert von 0.68. Dies bestätigt die hohe Stabilität und Generalisierbarkeit des Regressionsmodells auf ungesehene Patientendaten.
-
-**Machine-Learning-Vergleich: Logistische Regression vs. Random Forest** Abschliessend wurde das klassische statistische Verfahren dem modernen Ensemble-Lernalgorithmus Random Forest gegenübergestellt. Unter identischen Resampling-Bedingungen (10-Fold CV) erzielt der Random Forest (bei einem optimierten Hyperparameter von `mtry = 2`) eine Accuracy von 83.9 % und einen Kappa-Wert von 0.67. Der baumbasierte Algorithmus erbringt folglich keine signifikante Leistungssteigerung gegenüber dem linearen Verfahren.
 
 **Medizinisch-klinische Schlussfolgerung** Im Kontext eines Clinical Decision Support Systems (CDSS) ist dieses Ergebnis hochrelevant. Der Random Forest agiert als intransparentes "Black-Box"-Modell, dessen innere Entscheidungswege (welcher Baum trifft welche Entscheidung) für das medizinische Personal kaum nachvollziehbar sind. Die logistische Regression bietet hingegen als "White-Box"-Verfahren volle Transparenz (Explainable AI): Der Einfluss jedes Prädiktors lässt sich exakt quantifizieren (via Koeffizienten und Odds Ratios). Da die logistische Regression dem komplexeren Machine-Learning-Algorithmus prädiktiv ebenbürtig, hier sogar marginal überlegen, ist, qualifiziert sie sich aufgrund ihrer hohen Interpretierbarkeit eindeutig als das methodisch überlegene Verfahren für die translationale Anwendung in der ärztlichen Primärversorgung.
 
