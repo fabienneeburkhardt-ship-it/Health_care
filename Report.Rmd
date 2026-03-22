@@ -29,7 +29,7 @@ library(pROC)
 library(randomForest)
 ```
 
-# Einleitung & Forschungsfrage
+# 1 Einleitung & Forschungsfrage
 
 Herz-Kreislauf-Erkrankungen, insbesondere ischämische Herzkrankheiten wie die koronare Herzkrankheit (KHK), stellen laut der Weltgesundheitsorganisation (WHO) weltweit die führende Todesursache dar. Die KHK, in aktuellen Leitlinien oft unter dem Begriff der chronischen Koronarsyndrome (CCS) zusammengefasst, ist durch eine fortschreitende Arteriosklerose der Herzkranzgefässe gekennzeichnet. Diese Verengung führt zu einer verminderten Sauerstoffversorgung des Herzmuskels, was sich klinisch häufig als Angina Pectoris äussert und unbehandelt in einem lebensbedrohlichen Myokardinfarkt resultieren kann. Eine frühzeitige und präzise Diagnostik ist daher von entscheidender prognostischer Bedeutung.
 
@@ -39,7 +39,7 @@ Vor diesem medizinischen und gesundheitsökonomischen Hintergrund leitet sich di
 
 Um diese Frage zu beantworten, verfolgt die vorliegende Arbeit ein zweistufiges Ziel: Im ersten Schritt wird anhand des historischen "Cleveland Heart Disease"-Datensatzes ein statistisch optimiertes Klassifikationsmodell (logistische Regression) entwickelt und evaluiert. Im zweiten Schritt liegt der Fokus auf der praktischen Translation: Ziel ist es, aus den statistischen Erkenntnissen ein praxistaugliches, Screening-Tool zu extrahieren. Dieses soll ausschliesslich auf einfach zu erfassenden Basisparametern beruhen und sich an den aktuellen Triage-Leitlinien der European Society of Cardiology (ESC) orientieren. Das finale Modell wird schliesslich in einen Prototyp eines interaktiven Clinical Decision Support Systems (CDSS) überführt.
 
-# Datengrundlage & Datenaufbereitung
+# 2 Datengrundlage & Datenaufbereitung
 
 Für die vorliegende Analyse wurde der "Cleveland Heart Disease"-Datensatz aus dem UCI Machine Learning Repository herangezogen. Ursprünglich umfasste der Datensatz n = 303 Beobachtungen klinischer Patientendaten. Im Rahmen eines Preprocessings wurden die Daten zunächst auf Inkonsistenzen und fehlende Werte (im Originaldatensatz teilweise als "?" kodiert) geprüft. Um Verzerrungen in den späteren Machine-Learning-Modellen zu vermeiden, wurden sechs unvollständige Fälle vollständig aus dem Datensatz entfernt (Listwise Deletion). Die finale, bereinigte Stichprobe für die Modellierung beläuft sich somit auf n = 297 Patienten.
 
@@ -47,7 +47,7 @@ Ein zentraler methodischer Schritt der Datenaufbereitung war die Transformation 
 
 Diese Binarisierung ist primär in der geringen Stichprobengrösse begründet. Der Versuch, ein prädiktives Modell für fünf separate Ausprägungen auf Basis von lediglich 297 Patienten zu trainieren, würde zu einer massiven Zersplitterung der Daten (Class Imbalance) und somit zu instabilen Schätzern führen. Durch die Reduktion auf eine dichotome Fragestellung wird das Modell exakt auf die klinisch relevanteste Triage-Entscheidung fokussiert.
 
-## Variablenübersicht
+## 2.1 Variablenübersicht
 
 Der verwendete Cleveland-Datensatz umfasst nach der Bereinigung 14 klinisch relevante Attribute. Die folgende Tabelle bietet eine Übersicht über die verwendeten physiologischen Parameter, deren Bedeutung sowie ihre Ausprägungen:
 
@@ -68,7 +68,7 @@ Der verwendete Cleveland-Datensatz umfasst nach der Bereinigung 14 klinisch rele
 | **`thal`** | Thallium-Szintigraphie (Nuklearmedizin. Test) | Kategorial (3 = normal, 6 = fixierter Defekt, 7 = reversibler Defekt) |
 | **`num` / `target`** | Diagnose der koronaren Herzkrankheit (Zielvariable) | Ursprünglich 0-4. Binarisiert: 0 = Gesund, 1 = Krank |
 
-## Datenbereinigung im Code
+## 2.2 Datenbereinigung im Code
 
 Im folgenden code werden die Daten wie zuvor beschrieben bereinigt und vorbereitet.
 
@@ -94,7 +94,7 @@ df_modell <- na.omit(df_modell)
 #dim(df_modell)
 ```
 
-# Explorative Datenanalyse (EDA)
+# 3 Explorative Datenanalyse (EDA)
 
 Um ein tiefgreifendes Verständnis für die zugrundeliegende Datenstruktur zu gewinnen und erste Hypothesen abzuleiten, wurde eine umfassende explorative Datenanalyse (EDA) durchgeführt.
 
@@ -104,7 +104,7 @@ Für die kontinuierlichen Variablen wurden Varianzanalysen (ANOVA) durchgeführt
 
 Abschliessend wurde eine Korrelationsmatrix aller numerischen Variablen erstellt, um potenzielle Multikollinearität zu prüfen. Die Inspektion der Matrix zeigt, dass die Korrelationen zwischen den unabhängigen Variablen in einem unkritischen Bereich liegen, weshalb alle Parameter in das initiale Basismodell aufgenommen werden können.
 
-## Hypothesentests (Chi-Quadrat & ANOVA)
+## 3.1 Hypothesentests (Chi-Quadrat & ANOVA)
 
 ```{r eda_tests, echo = TRUE, warning = FALSE, message = FALSE}
 # --- 1. Chi-Quadrat-Tests (Kategoriale Variablen) ---
@@ -128,7 +128,7 @@ Ein konsistentes Bild zeigt sich bei den kontinuierlichen Parametern mittels ein
 
 Dass Cholesterin und Nüchternblutzucker in der isolierten Betrachtung nicht signifikant trennen, widerspricht nicht ihrer medizinischen Relevanz. In der kardiologischen Pathophysiologie sind Hyperlipidämie (erhöhtes Cholesterin) und Diabetes mellitus (erhöhter Blutzucker) elementare, systemische Risikofaktoren. Sie begünstigen die Arteriosklerose über Jahre hinweg und entfalten ihre prädiktive Kraft häufig erst im multivariaten Zusammenspiel mit anderen Parametern (wie Alter und Blutdruck). Da die aktuellen Leitlinien der European Society of Cardiology (ESC) den Lipid- und Glukosestatus für die systematische Risikostratifizierung explizit einfordern, werden diese beiden Parameter methodisch und klinisch fundiert in die anschliessende Regressionsmodellierung übernommen.
 
-## Visuelle Analyse
+## 3.2 Visuelle Analyse
 
 ```{r eda_plots, echo = TRUE, warning = FALSE, message = FALSE, fig.width=8, fig.height=6}
 # --- 1. VISUELLE EDA: Kontinuierliche Basisparameter (Boxplots) ---
@@ -198,7 +198,7 @@ corrplot(korrelations_matrix, method = "color", type = "upper",
 
 **Korrelationsmatrix und Multikollinearität** Die Korrelationsmatrix quantifiziert die linearen Abhängigkeiten des gesamten Variablenraums, um kritische Multikollinearität auszuschliessen. Die stärkste Prädiktor-Interkorrelation im Gesamtdatensatz besteht zwischen der ST-Senkung (`oldpeak`) und der ST-Steigung (`slope`, r = 0.58). Die sechs finalen Hausarzt-Parameter weisen untereinander lediglich marginale Korrelationen auf (maximal Alter und Blutdruck mit r = 0.29). Da kein Variablenpaar den Schwellenwert für Multikollinearität (r \> 0.8) überschreitet, ist das Risiko verzerrter Regressionskoeffizienten auszuschliessen. Eine robuste multivariate Modellierung ist somit methodisch legitimiert.
 
-# Statistische Modellierung
+# 4 Statistische Modellierung
 
 Um ein belastbares prädiktives Modell zu erstellen, wurde der Datensatz zunächst reproduzierbar in ein Trainingsset (70 %, n = 207) und ein Testset (30 %, n = 90) aufgeteilt. Sämtliche Modellparameter sowie die nachfolgende Variablenselektion wurden ausschliesslich auf dem Trainingsset durchgeführt. Das Testset wurde zur Evaluation der Vorhersagegüte sowie zur Schwellenwert-Analyse herangezogen. Aufgrund der Grösse des Datensatzes (n= 297) wurde auf eine weitere Aufteilung in separate Validierungs- und Testsets verzichtet. Die Robustheit der erzielten Ergebnisse wird stattdessen durch zwei komplementäre Verfahren abgesichert. Einerseits die 10-fache Kreuzvalidierung sowie die Monte-Carlo-Simulation mit 100 Iterationen. 
 
@@ -208,7 +208,7 @@ Im dritten Schritt wurde ein reduziertes Modell entwickelt, dass ausschliesslich
 
 **Interpretation des "Alters-Paradoxons":** Besondere Beachtung verdient das Ausscheiden der Variable Alter (`age`). In der EDA zeigte sich das Alter noch als hochsignifikanter Trennfaktor. In der multivariaten Regression verlor es jedoch seine Signifikanz und wurde eliminiert. Zwar steigt das KHK-Risiko mit dem Alter an, jedoch manifestiert sich dieses Risiko direkt in anderen gemessenen Parametern (wie Blutdruck oder Gefässverkalkung). Sobald diese direkten "Treiber" im Modell enthalten sind, liefert das blosse Alter keine zusätzliche Erklärungsleistung mehr.
 
-## Basismodell (13 Variablen)
+## 4.1 Basismodell (13 Variablen)
 
 ```{r}
 # Datensplit (70/30)
@@ -234,7 +234,7 @@ Auffällig ist, dass Variablen wie Alter (`age`, $p = 0.825$) oder Serumcholeste
 
 Um ein Overfitting durch diese nicht-signifikanten Parameter zu vermeiden und das Modell praxistauglicher zu machen, wird es im nächsten Schritt mittels systematischer Rückwärts-Selektion dimensionsreduziert.
 
-## Optimiertes Modell (Rückwärts-Selektion)
+## 4.2 Optimiertes Modell (Rückwärts-Selektion)
 
 ```{r}
 # Automatische Rückwärts-Selektion durchführen
@@ -255,13 +255,13 @@ Das resultierende, optimierte Regressionsmodell umfasst noch neun unabhängige P
 
 Bemerkenswert ist, dass Parameter wie der Nüchternblutzucker (`fbs`, $p = 0.114$) oder die ST-Steigung (`slope`, $p = 0.108$) im Modell verbleiben, obwohl sie das strikte Signifikanzniveau ($\alpha = 0.05$) verfehlen. Dies unterstreicht die methodische Eigenschaft der AIC-Optimierung: Das Kriterium fokussiert sich primär auf die prädiktive Gesamtleistung. Die Variablen verbleiben im Algorithmus, da ihr Informationsgewinn im multivariaten Zusammenspiel die mathematische "Strafe" (Penalty) für die zusätzliche Modellkomplexität überwiegt. Das resultierende 9-Variablen-Modell bildet somit die robuste Grundlage für die anschliessende Evaluation am Testdatensatz.
 
-# Modellevaluation und Schwellenwert-Analyse
+# 5 Modellevaluation und Schwellenwert-Analyse
 
 Zur Überprüfung der prädiktiven Güte wurde das optimierte Modell auf den Testdatensatz angewendet.
 
-## Standard-Evaluation (50%) & ROC-Kurve
+## 5.1  Standard-Evaluation (50%) & ROC-Kurve
 
-### Heatmap
+### 5.1.1 Heatmap
 
 ```{r eval_50_heatmap, echo=TRUE, fig.width=6, fig.height=5, warning=FALSE, message=FALSE}
 # 1. Wahrscheinlichkeiten berechnen
@@ -301,7 +301,7 @@ heatmap_cm <- ggplot(data = cm_daten, aes(x = Referenz, y = Vorhersage, fill = A
 print(heatmap_cm)
 ```
 
-###ROC-Kurve
+### 5.1.2 ROC-Kurve
 ```{r}
 wahrscheinlichkeiten <- predict(modell_optimiert, newdata = test_data, type = "response")
 
@@ -327,7 +327,7 @@ Die Konfusionsmatrix quantifiziert die prädiktive Klassifikationsleistung des o
 
 Die Receiver Operating Characteristic (ROC)-Kurve visualisiert den Kompromiss (Trade-off) zwischen Sensitivität und Spezifität über sämtliche potenziellen Schwellenwerte hinweg. Der Verlauf der Kurve in Richtung des oberen linken Quadranten indiziert eine hohe Modellgüte. Quantifiziert wird diese Leistungsfähigkeit durch die Fläche unter der Kurve (Area Under the Curve, AUC). Mit einem exzellenten AUC-Wert von 0.884 belegt das Modell eine herausragende, schwellenwertunabhängige Diskriminierungsfähigkeit. Es ist in der Lage, hochgradig verlässlich zwischen gesunden und KHK-erkrankten Patienten zu trennen und qualifiziert sich damit robust für die anschliessende Schwellenwert-Rekalibrierung.
 
-## Klinische Rekalibrierung (20%)
+## 5.2 Klinische Rekalibrierung (20%)
 
 ```{r}
 # Schwellenwert 20%
@@ -348,7 +348,7 @@ Durch die bewusste Absenkung des Cut-offs von 50 % auf 20 % wird das Modell auf 
 
 Dieser essenzielle Sicherheitsgewinn geht mathematisch zwingend zulasten der Spezifität, welche auf 55.9 % abfällt, sowie der Gesamtgenauigkeit (67.8 %). Das Modell produziert folglich mehr falsch-positive Alarme (gesunde Patienten, die als potenziell krank eingestuft werden). Im primärmedizinischen Triage-Szenario (Gatekeeper-Funktion) ist dieser Effekt jedoch erwünscht und tolerabel, da die Priorität auf dem sicheren Ausschlussverfahren (Rule-out) der Risikopatienten liegt.
 
-# Methoden-Stresstest: Kreuzvalidierung & Machine Learning
+# 6 Methoden-Stresstest: Kreuzvalidierung & Machine Learning
 
 Um auszuschliessen, dass die Metriken lediglich das Resultat einer zufällig vorteilhaften Aufteilung ("Lucky Split") sind, wurde eine 10-fache Kreuzvalidierung (Cross-Validation) über den gesamten Datensatz durchgeführt. Hierbei bestätigte das logistische Regressionsmodell seine Stabilität mit einer Accuracy von 84.2 %.
 
@@ -509,7 +509,7 @@ Die Evaluation am konservativen ESC-Rule-out-Schwellenwert (\< 15 % KHK-Wahrsche
 
 Parallel dazu stabilisiert sich die durchschnittliche Spezifität bei 34.1 %. Das bedeutet, dass das Modell über alle Simulationsdurchläufe hinweg im Mittel über ein Drittel der herzgesunden Personen sicher und korrekt aus dem klinischen Pfad ausschliesst. Diese Werte bestätigen den angestrebten medizinischen und gesundheitsökonomischen Nutzen vollumfänglich: Das Modell agiert als sicherer, non-invasiver Filter in der hausärztlichen Primärversorgung.
 
-# Interaktive Diagnose-Applikation (R-Shiny)
+# 8 Interaktive Diagnose-Applikation (R-Shiny)
 
 **Prototyp des Clinical Decision Support Systems (CDSS)**
 
@@ -571,15 +571,15 @@ server <- function(input, output) {
 shinyApp(ui, server)
 ```
 
-# Diskussion & Fazit
+# 9 Diskussion & Fazit
 
-## Zusammenfassung der Ergebnisse
+## 9.1 Zusammenfassung der Ergebnisse
 
 Die vorliegende Arbeit demonstriert erfolgreich, wie maschinelle Lernverfahren und statistische Modellierung genutzt werden können, um die Diagnostik der koronaren Herzkrankheit in der medizinischen Primärversorgung zu optimieren. Ausgehend vom historischen Cleveland-Datensatz wurde zunächst ein prädiktives logistisches Regressionsmodell entwickelt. Durch eine AIC-Optimierung konnte das Modell von 13 auf 9 Prädiktoren reduziert werden. Das resultierende Modell überzeugte mit exzellenter Diskriminierungsfähigkeit (AUC = 0.884) und erwies sich in der Kreuzvalidierung (Accuracy = 84.2 %) gegenüber komplexeren Black-Box-Verfahren wie Random Forest als ebenbürtig und aufgrund seiner hohen Interpretierbarkeit als überlegen.
 
 Der zentrale Mehrwert liegt im Transfer in die klinische Praxis. Da das 9-Variablen-Modell invasive Parameter voraussetzte, wurde ein reduziertes Gatekeeper-Modell aus lediglich sechs non-invasiven Basisparametern für die Hausarztpraxis extrahiert. Durch eine gezielte Schwellenwert-Rekalibrierung und die Integration der ESC-Triage-Leitlinien entstand ein Screening-Tool, das eine Sensitivität von 100 % (im finalen Testset) bzw. 94.2 % (in der Monte-Carlo-Simulation) erreichte. Die Überführung in eine R-Shiny Applikation belegt die technische Machbarkeit eines solchen digitalen Assistenzsystems.
 
-## Limitierungen der Arbeit
+## 9.2 Limitierungen der Arbeit
 
 Trotz der vielversprechenden Resultate unterliegt die Analyse gewissen Limitierungen. Erstens entstammt der Datensatz dem Jahr 1989. Die medizinische Demografie sowie Ernährungs- und Lebensgewohnheiten haben sich seither verändert, was die direkte Übertragbarkeit der Wahrscheinlichkeitswerte auf heutige Patientenkollektive einschränkt.
 
@@ -587,7 +587,7 @@ Zweitens ist die finale Stichprobengrösse von n=297 für moderne Machine-Learni
 
 Drittens beschränkt sich das Modell auf einfache Laborparameter. Moderne, spezifische Blutbiomarker wie das LDL-Cholesterin, Entzündungsparameter (hs-CRP) oder hochsensitives Troponin fehlen in den Daten, würden die Trennschärfe des Modells in der Praxis jedoch zweifellos weiter erhöhen.
 
-## Ausblick und zukünftige Entwicklungen
+## 9.3 Ausblick und zukünftige Entwicklungen
 
 Für zukünftige Entwicklungen wäre ein zweistufiges Kaskaden-Screening-Modell denkbar. Stufe 1 berechnet das KHK-Risiko vollkommen non-invasiv für eine sofortige Triage im Sprechzimmer. Nur bei einem unklaren Ergebnis (mittleres Risiko) wird Stufe 2 ausgelöst, welche die Auswertung der Point-of-Care-Blutwerte hinzuzieht.
 
