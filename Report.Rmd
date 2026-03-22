@@ -206,8 +206,6 @@ Im ersten Schritt wurde ein Basismodell mit allen 13 Prädiktoren geschätzt. Di
 
 Im dritten Schritt wurde ein reduziertes Modell entwickelt, dass ausschliesslich sechs nicht-invasive Parameter erfasst. Dabei gelten Messungen, die ohne körperlichen Eingriff, Kontrastmittel oder apparative Spezialdiagnostik durchführbar sind als invasiv. Konkret sind dies Werte, die in in der Regel in einer Hausarztpraxis routinemässig erhoben werden können. Die Variablenauswahl folgt dabei primär einer klinisch-praktischen Logik mit einem Fokus auf Einsatzbarkeit. 
 
-**Interpretation des "Alters-Paradoxons":** Besondere Beachtung verdient das Ausscheiden der Variable Alter (`age`). In der EDA zeigte sich das Alter noch als hochsignifikanter Trennfaktor. In der multivariaten Regression verlor es jedoch seine Signifikanz und wurde eliminiert. Zwar steigt das KHK-Risiko mit dem Alter an, jedoch manifestiert sich dieses Risiko direkt in anderen gemessenen Parametern (wie Blutdruck oder Gefässverkalkung). Sobald diese direkten "Treiber" im Modell enthalten sind, liefert das blosse Alter keine zusätzliche Erklärungsleistung mehr.
-
 ## 4.1 Basismodell (13 Variablen)
 
 ```{r}
@@ -250,6 +248,8 @@ Zur Reduktion der Modellkomplexität und zur Vermeidung von Overfitting wurde ei
 **Evaluation des reduzierten Modells**
 
 Das resultierende, optimierte Regressionsmodell umfasst noch neun unabhängige Prädiktoren. Durch die Variablenreduktion sank der AIC-Wert von initial 164.54 auf 159.77, was eine verbesserte Balance zwischen Modellanpassung (Goodness-of-Fit) und Sparsamkeit (Parsimonie) belegt. Im finalen Modell erweisen sich die Anzahl der verengten Gefässe (`ca`, $p < 0.001$), der Ruheblutdruck (`trestbps`, $p < 0.001$), das Geschlecht (`sex`, $p = 0.003$), der Brustschmerztyp (`cp`, $p = 0.003$) sowie das Szintigraphie-Ergebnis (`thal`, $p = 0.002$) als hochsignifikante Haupttreiber der Vorhersage.
+
+**Ausscheiden der Variable Alter:** Besondere Beachtung verdient das Ausscheiden der Variable Alter (`age`). In der EDA zeigte sich das Alter noch als hochsignifikanter Trennfaktor. In der multivariaten Regression verlor es jedoch seine Signifikanz und wurde eliminiert. Zwar steigt das KHK-Risiko mit dem Alter an, jedoch manifestiert sich dieses Risiko direkt in anderen gemessenen Parametern (wie Blutdruck oder Gefässverkalkung). Sobald diese direkten "Treiber" im Modell enthalten sind, liefert das blosse Alter keine zusätzliche Erklärungsleistung mehr.
 
 **Methodische Einordnung nicht-signifikanter Parameter**
 
