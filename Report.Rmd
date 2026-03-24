@@ -223,7 +223,7 @@ corrplot(korrelations_matrix, method = "color", type = "upper",
 
 # Statistische Modellierung
 
-Da die Zielvariable target nur zwei Ausprägungen hat (KHK vorhanden oder nicht), wird als Kernverfahren die logistische Regression eingesetzt. Durch dieses Verfahren wird eine Wahrscheinlichkeit zwischen 0% und 100% für jeden Patienten berechnet, um zu sehen, ob eine KHK vorliegt. 
+Da die Zielvariable `target` nur zwei Ausprägungen hat (KHK vorhanden oder nicht), wird als Kernverfahren die logistische Regression eingesetzt. Durch dieses Verfahren wird eine Wahrscheinlichkeit zwischen 0% und 100% für jeden Patienten berechnet, um zu sehen, ob eine KHK vorliegt. 
 
 Um ein belastbares prädiktives Modell zu erstellen, wurde der Datensatz zunächst reproduzierbar in ein Trainingsset (70 %, n = `r nrow(train_data)`) und ein Testset (30 %, n = `r nrow(test_data)`) aufgeteilt. Sämtliche Modellparameter sowie die nachfolgende Variablenselektion wurden ausschliesslich auf dem Trainingsset durchgeführt. Das Testset wurde zur Evaluation der Vorhersagegüte sowie zur Schwellenwert-Analyse herangezogen. Aufgrund der Grösse des Datensatzes (n = `r nrow(df_modell)`) wurde auf eine weitere Aufteilung in separate Validierungs- und Testsets verzichtet. Die Robustheit der erzielten Ergebnisse wird stattdessen durch zwei komplementäre Verfahren abgesichert. Einerseits die 10-fache Kreuzvalidierung sowie die Monte-Carlo-Simulation mit 100 Iterationen. 
 
