@@ -223,6 +223,19 @@ corrplot(korrelations_matrix, method = "color", type = "upper",
 
 # Statistische Modellierung
 
+```{r datensplit, include=FALSE}
+set.seed(42)
+train_index <- sample(seq_len(nrow(df_modell)), size = 0.7 * nrow(df_modell))
+train_data  <- df_modell[train_index, ]
+test_data   <- df_modell[-train_index, ]
+```
+
+```{r modelle_trainieren, include=FALSE}
+# Modelle vorab berechnen, damit inline-R im Einleitungstext darauf zugreifen kann
+modell_voll      <- glm(target ~ ., data = train_data, family = "binomial")
+modell_optimiert <- step(modell_voll, direction = "backward", trace = 0)
+```
+
 Da die Zielvariable `target` nur zwei Ausprägungen hat (KHK vorhanden oder nicht), wird als Kernverfahren die logistische Regression eingesetzt. Durch dieses Verfahren wird eine Wahrscheinlichkeit zwischen 0% und 100% für jeden Patienten berechnet, um zu sehen, ob eine KHK vorliegt. 
 
 Um ein belastbares prädiktives Modell zu erstellen, wurde der Datensatz zunächst reproduzierbar in ein Trainingsset (70 %, n = `r nrow(train_data)`) und ein Testset (30 %, n = `r nrow(test_data)`) aufgeteilt. Sämtliche Modellparameter sowie die nachfolgende Variablenselektion wurden ausschliesslich auf dem Trainingsset durchgeführt. Das Testset wurde zur Evaluation der Vorhersagegüte sowie zur Schwellenwert-Analyse herangezogen. Aufgrund der Grösse des Datensatzes (n = `r nrow(df_modell)`) wurde auf eine weitere Aufteilung in separate Validierungs- und Testsets verzichtet. Die Robustheit der erzielten Ergebnisse wird stattdessen durch zwei komplementäre Verfahren abgesichert. Einerseits die 10-fache Kreuzvalidierung sowie die Monte-Carlo-Simulation mit 100 Iterationen. 
@@ -234,14 +247,6 @@ Im dritten Schritt wurde ein reduziertes Modell entwickelt, das ausschliesslich 
 ## Basismodell (13 Variablen)
 
 ```{r model_basis}
-# Datensplit (70/30)
-set.seed(42)
-train_index <- sample(seq_len(nrow(df_modell)), size = 0.7 * nrow(df_modell))
-train_data <- df_modell[train_index, ]
-test_data  <- df_modell[-train_index, ]
-
-# Volles Modell trainieren
-modell_voll <- glm(target ~ ., data = train_data, family = "binomial")
 summary(modell_voll)
 ```
 
@@ -260,9 +265,6 @@ Um ein Overfitting durch diese nicht-signifikanten Parameter zu vermeiden und da
 ## Optimiertes Modell (Rückwärts-Selektion)
 
 ```{r model_rueckwaerts}
-# Automatische Rückwärts-Selektion durchführen
-modell_optimiert <- step(modell_voll, direction = "backward")
-# Finales, reduziertes Modell anzeigen
 summary(modell_optimiert)
 ```
 
@@ -342,6 +344,14 @@ Durch die bewusste Absenkung des Cut-offs von 50 % auf 20 % wird das Modell auf 
 Dieser essenzielle Sicherheitsgewinn geht mathematisch zwingend zulasten der Spezifität, welche auf `r round(matrix_sensibel$byClass["Specificity"] * 100, 1)` % abfällt, sowie der Gesamtgenauigkeit (`r round(matrix_sensibel$overall["Accuracy"] * 100, 1)` %). Das Modell produziert folglich mehr falsch-positive Alarme (gesunde Patienten, die als potenziell krank eingestuft werden). Im primärmedizinischen Triage-Szenario (Gatekeeper-Funktion) ist dieser Effekt jedoch erwünscht und tolerabel, da die Priorität auf dem sicheren Ausschlussverfahren (Rule-out) der Risikopatienten liegt.
 
 # Robustheitsprüfung und Modellvergleich
+
+```{r robustheit_berechnen, include=FALSE}
+train_kontrolle <- trainControl(method = "cv", number = 10)
+cv_logreg <- train(target ~ sex + cp + trestbps + fbs + thalach + exang + slope + ca + thal,
+                   data = df_modell, method = "glm", family = "binomial", trControl = train_kontrolle)
+set.seed(42)
+cv_rf <- train(target ~ ., data = df_modell, method = "rf", trControl = train_kontrolle)
+```
 Die Evaluation am fixen Testset liefert eine erste Schätzung der Modellgüte. Um auszuschliessen, dass diese Ergebnisse von der spezifischen Datenaufteilung abhängen, wird das Modell nachfolgend einer weiterführenden Robustheitsprüfung unterzogen.Ergänzend wird die logistische Regression dem Random Forest gegenübergestellt, um die Methodenwahl empirisch zu validieren.
 
 **Robustheitsprüfung mittels Kreuzvalidierung** Um die prädiktive Güte methodisch abzusichern und eine Verzerrung durch eine zufällig vorteilhafte Datenaufteilung (Overfitting an den spezifischen Train-Test-Split) auszuschliessen, wurde das reduzierte 9-Variablen-Modell einer 10-fachen Kreuzvalidierung (10-Fold Cross-Validation) unterzogen. Über alle zehn Folds hinweg erzielt die logistische Regression eine durchschnittliche Gesamtgenauigkeit (Accuracy) von `r round(cv_logreg$results$Accuracy * 100, 1)` % sowie einen soliden Cohens-Kappa-Wert von `r round(cv_logreg$results$Kappa, 2)`. Dies bestätigt die hohe Stabilität und Generalisierbarkeit des Regressionsmodells auf ungesehene Patientendaten.
@@ -350,17 +360,8 @@ Die Evaluation am fixen Testset liefert eine erste Schätzung der Modellgüte. U
 
 
 ```{r robustheit_cv, results='markup'}
-train_kontrolle <- trainControl(method = "cv", number = 10)
-
-# Logistische Regression (CV)
-cv_logreg <- train(target ~ sex + cp + trestbps + fbs + thalach + exang + slope + ca + thal, 
-                   data = df_modell, method = "glm", family = "binomial", trControl = train_kontrolle)
 print("--- Logistische Regression (10-Fold CV) ---")
 print(cv_logreg$results)
-
-# Random Forest (CV)
-set.seed(42)
-cv_rf <- train(target ~ ., data = df_modell, method = "rf", trControl = train_kontrolle)
 print("--- Random Forest (10-Fold CV) ---")
 print(cv_rf$results[cv_rf$results$mtry == 2, ])
 ```
@@ -374,6 +375,26 @@ Obwohl das entwickelte 9-Variablen-Modell eine exzellente Güte aufweist, stöss
 Die Leitlinien der European Society of Cardiology (ESC) für Koronarsyndrome empfehlen seit 2024 ein stufenweises Vorgehen. Als erster Schritt, soll eine klinische Vorhersagewahrscheinlichkeit (auch PTP für Pre-Test Probability genannt), geschätzt werden durch einfache Parameter wie Alter, Geschlecht und Symptomcharakter, bevor andere aufwändigere Massnahmen eingeleitet werden. Zusätzlich werden Risikofaktoren wie Blutzucker und Blutdruck in diese Einschätzung mit einbezogen, jene Variablen, die auch im Hausarzt-Screening-Modell verwendet werden (Vrints et al., 2024).
 
 ## Entwicklung des Gatekeeper-Modells
+
+```{r screening_berechnen, include=FALSE}
+df_screening <- df_modell %>% select(target, age, sex, cp, trestbps, chol, fbs)
+# train_index wurde auf df_modell erstellt; df_screening ist eine Spalten-Teilmenge
+# derselben Zeilen, daher ist die direkte Wiederverwendung des Index korrekt.
+train_data_scr <- df_screening[train_index, ]
+test_data_scr  <- df_screening[-train_index, ]
+modell_screening      <- glm(target ~ ., data = train_data_scr, family = "binomial")
+wahrscheinlichkeiten_scr <- predict(modell_screening, newdata = test_data_scr, type = "response")
+vorhersagen_fakt_scr  <- factor(ifelse(wahrscheinlichkeiten_scr > 0.15, "1", "0"),
+                                levels = levels(test_data_scr$target))
+matrix_screening <- confusionMatrix(data = vorhersagen_fakt_scr,
+                                    reference = test_data_scr$target, positive = "1")
+esc_triage <- cut(wahrscheinlichkeiten_scr,
+                  breaks = c(-Inf, 0.15, 0.85, Inf),
+                  labels = c("1. Niedrig (<15%): Keine Tests",
+                             "2. Mittel (15-85%): Bildgebung",
+                             "3. Hoch (>85%): Herzkatheter"))
+triage_ergebnisse <- table(Vorhersage = esc_triage, Tatsaechliche_Diagnose = test_data_scr$target)
+```
 
 Es wurde ein stark reduziertes logistisches Regressionsmodell trainiert, das sich ausschliesslich auf sechs non-invasive Basisparameter fokussiert. Alter (`age`), Geschlecht (`sex`), Brustschmerztyp (`cp`), Ruheblutdruck (`trestbps`), Serumcholesterin (`chol`) und Nüchternblutzucker (`fbs`). Die Auswahl jener Variablen steht in einer typischen Hausarztpraxis zur Verfügung ohne jegliche Überweisungen oder Spezialtechnik und gilt seit Jahrzehnten als Grundlage der kardiovaskulären Risikobeurteilung (D’Agostino et al., 2008).
 
@@ -390,36 +411,10 @@ Um die Vorhersagewahrscheinlichkeiten direkt in die klinische Praxis zu überset
 3.	**Hoch (> 85 %)**: Direkte invasive Abklärung (Rule-in)
 
 ```{r screening_modell, results='markup'}
-# Daten für das Screening-Modell (nur 6 Variablen!)
-df_screening <- df_modell %>% select(target, age, sex, cp, trestbps, chol, fbs)
-
-# train_index wurde auf df_modell erstellt; df_screening ist eine Spalten-Teilmenge
-# derselben Zeilen, daher ist die direkte Wiederverwendung des Index korrekt.
-train_data_scr <- df_screening[train_index, ]
-test_data_scr  <- df_screening[-train_index, ]
-
-# Neues Modell trainieren
-modell_screening <- glm(target ~ ., data = train_data_scr, family = "binomial")
-wahrscheinlichkeiten_scr <- predict(modell_screening, newdata = test_data_scr, type = "response")
-
-# Schwellenwert 15% für maximale Sensitivität
-vorhersagen_fakt_scr <- factor(ifelse(wahrscheinlichkeiten_scr > 0.15, "1", "0"), levels = levels(test_data_scr$target))
-
-matrix_screening <- confusionMatrix(data = vorhersagen_fakt_scr, reference = test_data_scr$target, positive = "1")
 print("Performance des 6-Variablen-Screening-Modells (Cut-off 15%):")
 print(matrix_screening$byClass[c("Sensitivity", "Specificity")])
-
-# ESC Triage System
-esc_triage <- cut(wahrscheinlichkeiten_scr, 
-                  breaks = c(-Inf, 0.15, 0.85, Inf), 
-                  labels = c("1. Niedrig (<15%): Keine Tests", 
-                             "2. Mittel (15-85%): Bildgebung", 
-                             "3. Hoch (>85%): Herzkatheter"))
-
-triage_ergebnisse <- table(Vorhersage = esc_triage, Tatsaechliche_Diagnose = test_data_scr$target)
 print("ESC-Triage-System angewendet auf den Testdatensatz:")
 print(triage_ergebnisse)
-# Heatmap für das Screening-Modell (im gleichen Design wie Kapitel 5)
 print(make_heatmap(matrix_screening,
                    title     = "Klassifikationsleistung: Gatekeeper-Modell",
                    subtitle  = "Vorhersage vs. Tatsächliche Diagnose (ESC Cut-off: 15%)",
