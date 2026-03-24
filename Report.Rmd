@@ -15,10 +15,8 @@ output:
 
 
 ```{r setup, include=FALSE}
-# Grundeinstellungen für das gesamte Dokument
 knitr::opts_chunk$set(echo = TRUE, results = 'hide', warning = FALSE, message = FALSE)
 
-# Alle benötigten Bibliotheken laden
 library(ucimlrepo)
 library(dplyr)
 library(tidyr)
@@ -27,11 +25,11 @@ library(corrplot)
 library(caret)
 library(pROC)
 library(randomForest)
-# library(shiny)       # Für Kapitel 8 (Shiny-App) benötigt – vor dem Ausführen installieren
+# library(shiny)  # für Kap. 8 benötigt
 ```
 
 ```{r helper_functions, include=FALSE}
-# Wiederverwendbare Hilfsfunktion für Konfusionsmatrix-Heatmaps
+# Heatmap-Helper für Konfusionsmatrizen
 make_heatmap <- function(cm, title, subtitle, threshold = 20) {
   cm_daten <- as.data.frame(cm$table)
   colnames(cm_daten) <- c("Vorhersage", "Referenz", "Anzahl")
@@ -96,24 +94,22 @@ Der verwendete Cleveland-Datensatz umfasst nach der Bereinigung 14 klinisch rele
 Im folgenden code werden die Daten wie zuvor beschrieben bereinigt und vorbereitet.
 
 ```{r}
-# 1. Daten laden
 heart_disease <- fetch_ucirepo(id = 45)
 df <- bind_cols(heart_disease$data$features, heart_disease$data$targets)
 
-# 2. Fehlerhafte Werte (?) mit echtem NA ersetzen und Typen korrigieren
+# "?" als NA kodieren, Typen korrigieren
 df[df == "?"] <- NA
 df$ca <- as.numeric(as.character(df$ca))
 df$thal <- as.numeric(as.character(df$thal))
 
-# 3. Zielvariable binarisieren (0 = Gesund, 1 = Krank) und 'num' entfernen
+# Zielvariable binarisieren, 'num' entfernen
 df_modell <- df %>%
   mutate(target = as.factor(ifelse(num > 0, "1", "0"))) %>%
   select(-num)
 
-# 4. Löschen aller fehlenden Werte für sauberes Machine Learning
 df_modell <- na.omit(df_modell)
 
-# Kontrolle der Dimensionen (Erwartet: 297 Zeilen, 14 Spalten)
+# Sanity check: 297 x 14
 #dim(df_modell)
 ```
 
@@ -130,15 +126,15 @@ Abschliessend wurde eine Korrelationsmatrix aller numerischen Variablen erstellt
 ## Hypothesentests (Chi-Quadrat & ANOVA)
 
 ```{r eda_tests, echo = TRUE, warning = FALSE, message = FALSE}
-# --- 1. Chi-Quadrat-Tests (Kategoriale Variablen) ---
-chisq.test(table(df_modell$cp, df_modell$target))   # Brustschmerztyp
-chisq.test(table(df_modell$sex, df_modell$target))  # Geschlecht
-chisq.test(table(df_modell$fbs, df_modell$target))  # Nüchternblutzucker
+# Chi-Quadrat (kategoriale Variablen)
+chisq.test(table(df_modell$cp, df_modell$target))   # cp
+chisq.test(table(df_modell$sex, df_modell$target))  # sex
+chisq.test(table(df_modell$fbs, df_modell$target))  # fbs
 
-# --- 2. Varianzanalysen / ANOVA (Kontinuierliche Variablen) ---
-summary(aov(age ~ target, data = df_modell))        # Alter
-summary(aov(trestbps ~ target, data = df_modell))   # Ruheblutdruck
-summary(aov(chol ~ target, data = df_modell))       # Cholesterin
+# ANOVA (kontinuierliche Variablen)
+summary(aov(age ~ target, data = df_modell))
+summary(aov(trestbps ~ target, data = df_modell))
+summary(aov(chol ~ target, data = df_modell))
 ```
 
 Um den Fokus der Untersuchung gezielt auf die Entwicklung des späteren, praxistauglichen Screening-Modells (siehe Kapitel 7) zu legen, konzentriert sich die inferenzstatistische Überprüfung der explorativen Datenanalyse auf exakt jene sechs Basisparameter, die für das finale Hausarzt-Triage-Tool relevant sind: Alter (`age`), Geschlecht (`sex`), Brustschmerztyp (`cp`), Ruheblutdruck (`trestbps`), Serumcholesterin (`chol`) und Nüchternblutzucker (`fbs`).
@@ -154,7 +150,7 @@ Dass Cholesterin und Nüchternblutzucker in der isolierten Betrachtung nicht sig
 ## Visuelle Analyse
 
 ```{r eda_plots, echo = TRUE, warning = FALSE, message = FALSE, fig.width=8, fig.height=6}
-# --- 1. VISUELLE EDA: Kontinuierliche Basisparameter (Boxplots) ---
+# Boxplots: kontinuierliche Variablen
 plot_kontinuierlich <- df_modell %>%
   select(target, age, trestbps, chol) %>%
   pivot_longer(cols = -target, names_to = "Variable", values_to = "Wert") %>%
@@ -170,9 +166,9 @@ plot_kontinuierlich <- df_modell %>%
 
 print(plot_kontinuierlich)
 
-# --- 2. VISUELLE EDA: Kategoriale Basisparameter (Balkendiagramme) ---
+# Balkendiagramme: kategoriale Variablen
 
-# Plot für Brustschmerztyp (cp)
+# cp
 plot_cp <- ggplot(df_modell, aes(x = factor(cp), fill = target)) +
   geom_bar(position = "fill", alpha = 0.8) + 
   scale_fill_manual(values = c("0" = "#1b9e77", "1" = "#d95f02")) +
@@ -182,7 +178,7 @@ plot_cp <- ggplot(df_modell, aes(x = factor(cp), fill = target)) +
 
 print(plot_cp)
 
-# Plot für Geschlecht (sex)
+# sex
 plot_sex <- ggplot(df_modell, aes(x = factor(sex), fill = target)) +
   geom_bar(position = "fill", alpha = 0.8) +
   scale_fill_manual(values = c("0" = "#1b9e77", "1" = "#d95f02")) +
@@ -193,7 +189,7 @@ plot_sex <- ggplot(df_modell, aes(x = factor(sex), fill = target)) +
 
 print(plot_sex)
 
-# Plot für Nüchternblutzucker (fbs)
+# fbs
 plot_fbs <- ggplot(df_modell, aes(x = factor(fbs), fill = target)) +
   geom_bar(position = "fill", alpha = 0.8) +
   scale_fill_manual(values = c("0" = "#1b9e77", "1" = "#d95f02"),
@@ -205,7 +201,7 @@ plot_fbs <- ggplot(df_modell, aes(x = factor(fbs), fill = target)) +
 
 print(plot_fbs)
 
-# --- 3. VISUELLE EDA: Multikollinearität (Gesamte Korrelationsmatrix) ---
+# Korrelationsmatrix
 df_numerisch <- df_modell %>% mutate(across(everything(), as.numeric)) 
 korrelations_matrix <- cor(df_numerisch, use = "complete.obs")
 
@@ -231,7 +227,7 @@ test_data   <- df_modell[-train_index, ]
 ```
 
 ```{r modelle_trainieren, include=FALSE}
-# Modelle vorab berechnen, damit inline-R im Einleitungstext darauf zugreifen kann
+# vorab für inline-R
 modell_voll      <- glm(target ~ ., data = train_data, family = "binomial")
 modell_optimiert <- step(modell_voll, direction = "backward", trace = 0)
 ```
@@ -289,18 +285,15 @@ Zur Überprüfung der prädiktiven Güte wurde das optimierte Modell auf den Tes
 ### Heatmap
 
 ```{r eval_50_heatmap, echo=TRUE, fig.width=6, fig.height=5, warning=FALSE, message=FALSE, results='markup'}
-# 1. Wahrscheinlichkeiten berechnen
 wahrscheinlichkeiten <- predict(modell_optimiert, newdata = test_data, type = "response")
 
-# 2. Schwellenwert 50% anwenden
+# Cut-off 50%
 vorhersagen_klassen <- ifelse(wahrscheinlichkeiten > 0.5, "1", "0")
 vorhersagen_fakt <- factor(vorhersagen_klassen, levels = levels(test_data$target))
 
-# 3. Konfusionsmatrix BERECHNEN und anzeigen
 konfusionsmatrix <- confusionMatrix(data = vorhersagen_fakt, reference = test_data$target, positive = "1")
 print(konfusionsmatrix)
 
-# 4. Heatmap anzeigen
 print(make_heatmap(konfusionsmatrix,
                    title    = "Heatmap der Klassifikationsleistung",
                    subtitle = "Vorhersage vs. Tatsächliche Diagnose (Cut-off: 50%)"))
@@ -308,7 +301,7 @@ print(make_heatmap(konfusionsmatrix,
 
 ### ROC-Kurve
 ```{r eval_roc, results='markup'}
-# ROC-Kurve (wahrscheinlichkeiten und konfusionsmatrix aus eval_50_heatmap)
+# wahrscheinlichkeiten aus eval_50_heatmap
 roc_kurve <- roc(test_data$target, wahrscheinlichkeiten, levels = c("0", "1"), direction="<", quiet=TRUE)
 plot(roc_kurve, main = "ROC-Kurve für das optimierte KHK-Modell", col = "blue", lwd = 2)
 print(paste("Der AUC-Wert beträgt:", round(auc(roc_kurve), 3)))
@@ -325,7 +318,7 @@ Die Receiver Operating Characteristic (ROC)-Kurve visualisiert den Kompromiss (T
 ## Klinische Rekalibrierung (20%)
 
 ```{r eval_20pct, results='markup'}
-# Schwellenwert 20%
+# Cut-off 20%
 neuer_cutoff <- 0.20
 vorhersagen_sensibel <- ifelse(wahrscheinlichkeiten > neuer_cutoff, "1", "0")
 vorhersagen_sensibel_fakt <- factor(vorhersagen_sensibel, levels = levels(test_data$target))
@@ -378,8 +371,7 @@ Die Leitlinien der European Society of Cardiology (ESC) für Koronarsyndrome emp
 
 ```{r screening_berechnen, include=FALSE}
 df_screening <- df_modell %>% select(target, age, sex, cp, trestbps, chol, fbs)
-# train_index wurde auf df_modell erstellt; df_screening ist eine Spalten-Teilmenge
-# derselben Zeilen, daher ist die direkte Wiederverwendung des Index korrekt.
+# gleicher Index, da df_screening nur Spalten-Subset von df_modell
 train_data_scr <- df_screening[train_index, ]
 test_data_scr  <- df_screening[-train_index, ]
 modell_screening      <- glm(target ~ ., data = train_data_scr, family = "binomial")
@@ -474,7 +466,7 @@ Um die praktische Anwendbarkeit des entwickelten Gatekeeper-Modells zu demonstri
 Der Anwender kann die sechs identifizierten Basisparameter über intuitive Schieberegler und Dropdown-Menüs eingeben. Im Hintergrund berechnet das logistische Regressionsmodell in Echtzeit die Pre-Test Probability (PTP) für das Vorliegen einer KHK. Basierend auf den implementierten ESC-Leitlinien übersetzt die Applikation diese Wahrscheinlichkeit direkt in eine Handlungsempfehlung. Das Tool schlägt somit erfolgreich die Brücke zwischen prädiktiver statistischer Modellierung und der patientennahen Triage.
 
 ```{r shiny_app, eval=FALSE}
-# Nutzt 'modell_screening' aus dem Environment
+# modell_screening aus screening_berechnen
 ui <- fluidPage(
   titlePanel("KHK-Screening-Tool"),
   sidebarLayout(
