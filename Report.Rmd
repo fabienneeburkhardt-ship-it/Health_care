@@ -255,7 +255,7 @@ Das resultierende, optimierte Regressionsmodell umfasst noch neun unabhängige P
 
 Bemerkenswert ist, dass Parameter wie der Nüchternblutzucker (`fbs`, $p = 0.114$) oder die ST-Steigung (`slope`, $p = 0.108$) im Modell verbleiben, obwohl sie das strikte Signifikanzniveau ($\alpha = 0.05$) verfehlen. Dies unterstreicht die methodische Eigenschaft der AIC-Optimierung: Das Kriterium fokussiert sich primär auf die prädiktive Gesamtleistung. Die Variablen verbleiben im Algorithmus, da ihr Informationsgewinn im multivariaten Zusammenspiel die mathematische "Strafe" für die zusätzliche Modellkomplexität überwiegt. Das resultierende 9-Variablen-Modell bildet somit die robuste Grundlage für die anschliessende Evaluation am Testdatensatz.
 
-# 5 Modellevaluation und Schwellenwert-Analyse
+# 5 Evaluation des Modells am Testset und Schwellenwert-Analyse
 
 Zur Überprüfung der prädiktiven Güte wurde das optimierte Modell auf den Testdatensatz angewendet.
 
@@ -348,7 +348,8 @@ Durch die bewusste Absenkung des Cut-offs von 50 % auf 20 % wird das Modell auf 
 
 Dieser essenzielle Sicherheitsgewinn geht mathematisch zwingend zulasten der Spezifität, welche auf 55.9 % abfällt, sowie der Gesamtgenauigkeit (67.8 %). Das Modell produziert folglich mehr falsch-positive Alarme (gesunde Patienten, die als potenziell krank eingestuft werden). Im primärmedizinischen Triage-Szenario (Gatekeeper-Funktion) ist dieser Effekt jedoch erwünscht und tolerabel, da die Priorität auf dem sicheren Ausschlussverfahren (Rule-out) der Risikopatienten liegt.
 
-# 6 Methoden-Stresstest: Kreuzvalidierung & Machine Learning
+# 6 Robustheitsprüfung und Modellvergleich
+Die Evaluation am fixen Testset liefert eine erste Schätzung der Modellgüte. Um auszuschliessen, dass diese Ergebnisse von der spezifischen Datenaufteilung abhängen, wird das Modell nachfolgend einer weiterführenden Robustheitsprüfung unterzogen.Ergänzend wird die logistische Regression dem Random Forest gegenübergestellt, um die Methodenwahl empirisch zu validieren."
 
 **Robustheitsprüfung mittels Kreuzvalidierung** Um die prädiktive Güte methodisch abzusichern und eine Verzerrung durch eine zufällig vorteilhafte Datenaufteilung (Overfitting an den spezifischen Train-Test-Split) auszuschliessen, wurde das reduzierte 9-Variablen-Modell einer 10-fachen Kreuzvalidierung (10-Fold Cross-Validation) unterzogen. Über alle zehn Folds hinweg erzielt die logistische Regression eine durchschnittliche Gesamtgenauigkeit (Accuracy) von 84.2 % sowie einen soliden Cohens-Kappa-Wert von 0.68. Dies bestätigt die hohe Stabilität und Generalisierbarkeit des Regressionsmodells auf ungesehene Patientendaten.
 
