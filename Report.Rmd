@@ -29,6 +29,28 @@ library(pROC)
 library(randomForest)
 ```
 
+```{r helper_functions, include=FALSE}
+# Wiederverwendbare Hilfsfunktion für Konfusionsmatrix-Heatmaps
+make_heatmap <- function(cm, title, subtitle, threshold = 20) {
+  cm_daten <- as.data.frame(cm$table)
+  colnames(cm_daten) <- c("Vorhersage", "Referenz", "Anzahl")
+  ggplot(data = cm_daten, aes(x = Referenz, y = Vorhersage, fill = Anzahl)) +
+    geom_tile(color = "white", linewidth = 1.5) +
+    scale_fill_gradient(low = "#e0f3f8", high = "#313695", name = "Patienten") +
+    geom_text(aes(label = Anzahl),
+              color = ifelse(cm_daten$Anzahl > threshold, "white", "black"),
+              size = 8, fontface = "bold") +
+    theme_minimal() +
+    labs(title = title, subtitle = subtitle,
+         x = "Tatsächliche Diagnose (0 = Gesund, 1 = Krank)",
+         y = "Modell-Vorhersage") +
+    theme(axis.text  = element_text(size = 12),
+          axis.title = element_text(size = 14, face = "bold"),
+          plot.title = element_text(size = 14, face = "bold"),
+          panel.grid = element_blank())
+}
+```
+
 # Einleitung & Forschungsfrage
 
 Herz-Kreislauf-Erkrankungen, insbesondere ischämische Herzkrankheiten wie die koronare Herzkrankheit (KHK), stellen laut der Weltgesundheitsorganisation (WHO) weltweit die führende Todesursache dar. Die KHK, in aktuellen Leitlinien oft unter dem Begriff der chronischen Koronarsyndrome (CCS) zusammengefasst, ist durch eine fortschreitende Arteriosklerose der Herzkranzgefässe gekennzeichnet. Diese Verengung führt zu einer verminderten Sauerstoffversorgung des Herzmuskels, was sich klinisch häufig als Angina Pectoris äussert und unbehandelt in einem lebensbedrohlichen Myokardinfarkt resultieren kann. Eine frühzeitige und präzise Diagnostik ist daher von entscheidender prognostischer Bedeutung.
@@ -210,7 +232,7 @@ Im dritten Schritt wurde ein reduziertes Modell entwickelt, dass ausschliesslich
 
 ## Basismodell (13 Variablen)
 
-```{r}
+```{r model_basis}
 # Datensplit (70/30)
 set.seed(42)
 train_index <- sample(seq_len(nrow(df_modell)), size = 0.7 * nrow(df_modell))
@@ -236,7 +258,7 @@ Um ein Overfitting durch diese nicht-signifikanten Parameter zu vermeiden und da
 
 ## Optimiertes Modell (Rückwärts-Selektion)
 
-```{r}
+```{r model_rueckwaerts}
 # Automatische Rückwärts-Selektion durchführen
 modell_optimiert <- step(modell_voll, direction = "backward")
 # Finales, reduziertes Modell anzeigen
@@ -263,7 +285,7 @@ Zur Überprüfung der prädiktiven Güte wurde das optimierte Modell auf den Tes
 
 ### Heatmap
 
-```{r eval_50_heatmap, echo=TRUE, fig.width=6, fig.height=5, warning=FALSE, message=FALSE}
+```{r eval_50_heatmap, echo=TRUE, fig.width=6, fig.height=5, warning=FALSE, message=FALSE, results='markup'}
 # 1. Wahrscheinlichkeiten berechnen
 wahrscheinlichkeiten <- predict(modell_optimiert, newdata = test_data, type = "response")
 
@@ -271,49 +293,19 @@ wahrscheinlichkeiten <- predict(modell_optimiert, newdata = test_data, type = "r
 vorhersagen_klassen <- ifelse(wahrscheinlichkeiten > 0.5, "1", "0")
 vorhersagen_fakt <- factor(vorhersagen_klassen, levels = levels(test_data$target))
 
-# 3. Konfusionsmatrix BERECHNEN 
+# 3. Konfusionsmatrix BERECHNEN und anzeigen
 konfusionsmatrix <- confusionMatrix(data = vorhersagen_fakt, reference = test_data$target, positive = "1")
-
-# Standard-Output anzeigen
 print(konfusionsmatrix)
 
-# 4. Direkt danach die Heatmap BAUEN
-cm_daten <- as.data.frame(konfusionsmatrix$table)
-colnames(cm_daten) <- c("Vorhersage", "Referenz", "Anzahl")
-
-heatmap_cm <- ggplot(data = cm_daten, aes(x = Referenz, y = Vorhersage, fill = Anzahl)) +
-  geom_tile(color = "white", linewidth = 1.5) +
-  scale_fill_gradient(low = "#e0f3f8", high = "#313695", name = "Patienten") +
-  geom_text(aes(label = Anzahl), 
-            color = ifelse(cm_daten$Anzahl > 20, "white", "black"), 
-            size = 8, fontface = "bold") +
-  theme_minimal() +
-  labs(title = "Heatmap der Klassifikationsleistung",
-       subtitle = "Vorhersage vs. Tatsächliche Diagnose (Cut-off: 50%)",
-       x = "Tatsächliche Diagnose (0 = Gesund, 1 = Krank)",
-       y = "Modell-Vorhersage") +
-  theme(axis.text = element_text(size = 12),
-        axis.title = element_text(size = 14, face = "bold"),
-        plot.title = element_text(size = 16, face = "bold"),
-        panel.grid = element_blank())
-
-# Heatmap anzeigen
-print(heatmap_cm)
+# 4. Heatmap anzeigen
+print(make_heatmap(konfusionsmatrix,
+                   title    = "Heatmap der Klassifikationsleistung",
+                   subtitle = "Vorhersage vs. Tatsächliche Diagnose (Cut-off: 50%)"))
 ```
 
 ### ROC-Kurve
-```{r}
-wahrscheinlichkeiten <- predict(modell_optimiert, newdata = test_data, type = "response")
-
-# Schwellenwert 50%
-vorhersagen_klassen <- ifelse(wahrscheinlichkeiten > 0.5, "1", "0")
-vorhersagen_fakt <- factor(vorhersagen_klassen, levels = levels(test_data$target))
-
-# Konfusionsmatrix
-konfusionsmatrix <- confusionMatrix(data = vorhersagen_fakt, reference = test_data$target, positive = "1")
-print(konfusionsmatrix)
-
-# ROC-Kurve
+```{r eval_roc, results='markup'}
+# ROC-Kurve (wahrscheinlichkeiten und konfusionsmatrix aus eval_50_heatmap)
 roc_kurve <- roc(test_data$target, wahrscheinlichkeiten, levels = c("0", "1"), direction="<", quiet=TRUE)
 plot(roc_kurve, main = "ROC-Kurve für das optimierte KHK-Modell", col = "blue", lwd = 2)
 print(paste("Der AUC-Wert beträgt:", round(auc(roc_kurve), 3)))
@@ -329,7 +321,7 @@ Die Receiver Operating Characteristic (ROC)-Kurve visualisiert den Kompromiss (T
 
 ## Klinische Rekalibrierung (20%)
 
-```{r}
+```{r eval_20pct, results='markup'}
 # Schwellenwert 20%
 neuer_cutoff <- 0.20
 vorhersagen_sensibel <- ifelse(wahrscheinlichkeiten > neuer_cutoff, "1", "0")
@@ -356,7 +348,7 @@ Die Evaluation am fixen Testset liefert eine erste Schätzung der Modellgüte. U
 **Machine-Learning-Vergleich: Logistische Regression vs. Random Forest** Abschliessend wurde das klassische statistische Verfahren dem modernen Ensemble-Lernalgorithmus Random Forest gegenübergestellt. Unter identischen Resampling-Bedingungen (10-Fold CV) erzielt der Random Forest (bei einem optimierten Hyperparameter von `mtry = 2`) eine Accuracy von 83.9 % und einen Kappa-Wert von 0.67. Der baumbasierte Algorithmus erbringt folglich keine signifikante Leistungssteigerung gegenüber dem linearen Verfahren.
 
 
-```{r}
+```{r robustheit_cv, results='markup'}
 train_kontrolle <- trainControl(method = "cv", number = 10)
 
 # Logistische Regression (CV)
@@ -407,7 +399,7 @@ Um die Vorhersagewahrscheinlichkeiten direkt in die klinische Praxis zu überset
 2.	**Mittel (15–85 %)**: Nicht-invasive Bildgebung
 3.	**Hoch (> 85 %)**: Direkte invasive Abklärung (Rule-in)
 
-```{r}
+```{r screening_modell, results='markup'}
 # Daten für das Screening-Modell (nur 6 Variablen!)
 df_screening <- df_modell %>% select(target, age, sex, cp, trestbps, chol, fbs)
 
@@ -435,31 +427,11 @@ esc_triage <- cut(wahrscheinlichkeiten_scr,
 triage_ergebnisse <- table(Vorhersage = esc_triage, Tatsaechliche_Diagnose = test_data_scr$target)
 print("ESC-Triage-System angewendet auf den Testdatensatz:")
 print(triage_ergebnisse)
-# --- Visuelle Konfusionsmatrix (Heatmap) für das Screening-Modell ---
-
-# 1. Daten aus der bereits berechneten 'matrix_screening' extrahieren
-cm_daten_scr <- as.data.frame(matrix_screening$table)
-colnames(cm_daten_scr) <- c("Vorhersage", "Referenz", "Anzahl")
-
-# 2. Heatmap generieren (im gleichen Design wie in Kapitel 5)
-heatmap_scr <- ggplot(data = cm_daten_scr, aes(x = Referenz, y = Vorhersage, fill = Anzahl)) +
-  geom_tile(color = "white", linewidth = 1.5) +
-  scale_fill_gradient(low = "#e0f3f8", high = "#313695", name = "Patienten") +
-  geom_text(aes(label = Anzahl), 
-            color = ifelse(cm_daten_scr$Anzahl > 10, "white", "black"), 
-            size = 8, fontface = "bold") +
-  theme_minimal() +
-  labs(title = "Klassifikationsleistung: Gatekeeper-Modell",
-       subtitle = "Vorhersage vs. Tatsächliche Diagnose (ESC Cut-off: 15%)",
-       x = "Tatsächliche Diagnose (0 = Gesund, 1 = Krank)",
-       y = "Modell-Vorhersage") +
-  theme(axis.text = element_text(size = 12),
-        axis.title = element_text(size = 14, face = "bold"),
-        plot.title = element_text(size = 14, face = "bold"),
-        panel.grid = element_blank())
-
-# Plot im Dokument anzeigen
-print(heatmap_scr)
+# Heatmap für das Screening-Modell (im gleichen Design wie Kapitel 5)
+print(make_heatmap(matrix_screening,
+                   title     = "Klassifikationsleistung: Gatekeeper-Modell",
+                   subtitle  = "Vorhersage vs. Tatsächliche Diagnose (ESC Cut-off: 15%)",
+                   threshold = 10))
 ```
 
 1.  **Niedrig (\< 15 %):** Keine weiteren Tests (Rule-out): Das Modell stufte 10 Patienten in diese Kategorie ein. Alle Patienten waren tatsächlich herzgesund und können bei einer Untersuchung bei einer Hausarztpraxis mit gutem Gewissen und ohne weitere Abklärungen entlassen werden.
@@ -470,7 +442,7 @@ print(heatmap_scr)
 
 ## Robustheitsprüfung durch Monte-Carlo-Simulation
 
-```{r}
+```{r monte_carlo, results='markup'}
 n_sim <- 100
 sens_liste <- numeric(n_sim)
 spez_liste <- numeric(n_sim)
@@ -514,7 +486,7 @@ Um die praktische Anwendbarkeit des entwickelten Gatekeeper-Modells zu demonstri
 
 Der Anwender kann die sechs identifizierten Basisparameter über intuitive Schieberegler und Dropdown-Menüs eingeben. Im Hintergrund berechnet das logistische Regressionsmodell in Echtzeit die Pre-Test Probability (PTP) für das Vorliegen einer KHK. Basierend auf den implementierten ESC-Leitlinien übersetzt die Applikation diese Wahrscheinlichkeit direkt in eine Handlungsempfehlung. Das Tool schlägt somit erfolgreich die Brücke zwischen prädiktiver statistischer Modellierung und der patientennahen Triage.
 
-```{r, eval=FALSE}
+```{r shiny_app, eval=FALSE}
 # Nutzt 'modell_screening' aus dem Environment
 ui <- fluidPage(
   titlePanel("KHK-Screening-Tool"),
