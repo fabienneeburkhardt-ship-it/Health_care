@@ -215,7 +215,7 @@ corrplot(korrelations_matrix, method = "color", type = "upper",
 
 **Diagnoseverteilung der kategorialen Basisparameter (Balkendiagramme)** Die proportionalen Balkendiagramme illustrieren die Diagnoseverteilung in Abhängigkeit von Brustschmerztyp, Geschlecht und Blutzucker. Auffällig ist die extreme Dominanz der Diagnoseklasse 1 (Krank) bei Patienten mit asymptomatischem Schmerzprofil (Kategorie 4), während bei klassischen Angina-Ausprägungen (Kategorien 1 bis 3) herzgesunde Patienten überwiegen. Das Geschlecht (`sex`) zeigt ebenfalls eine starke Diskriminierungsfähigkeit mit einer signifikant höheren KHK-Prävalenz bei Männern. Der Nüchternblutzucker (`fbs`) weist hingegen grafisch absolut identische KHK-Anteile in beiden Kategorien auf, was das nicht-signifikante Ergebnis des Chi-Quadrat-Tests (p = 1.000) exakt reproduziert.
 
-**Korrelationsmatrix und Multikollinearität** Die Korrelationsmatrix quantifiziert die linearen Abhängigkeiten des gesamten Variablenraums, um kritische Multikollinearität auszuschliessen. Die stärkste Prädiktor-Interkorrelation im Gesamtdatensatz besteht zwischen der ST-Senkung (`oldpeak`) und der ST-Steigung (`slope`, r = 0.58). Die sechs finalen Hausarzt-Parameter weisen untereinander lediglich marginale Korrelationen auf (maximal Alter und Blutdruck mit r = 0.29). Da kein Variablenpaar den Schwellenwert für Multikollinearität (r \> 0.8) überschreitet, ist das Risiko verzerrter Regressionskoeffizienten auszuschliessen. Eine robuste multivariate Modellierung ist somit methodisch legitimiert.
+**Korrelationsmatrix und Multikollinearität** Die Korrelationsmatrix quantifiziert die linearen Abhängigkeiten des gesamten Variablenraums, um kritische Multikollinearität auszuschliessen. Die stärkste Prädiktor-Interkorrelation im Gesamtdatensatz besteht zwischen der ST-Senkung (`oldpeak`) und der ST-Steigung (`slope`, r = 0.58). Die sechs finalen Hausarzt-Parameter weisen untereinander lediglich marginale Korrelationen auf (maximal Alter und Blutdruck mit r = 0.29). Da kein Variablenpaar den Schwellenwert für Multikollinearität (r \> 0.8) überschreitet, ist das Risiko relevanter Multikollinearität als gering einzuschätzen. Eine robuste multivariate Modellierung ist somit methodisch legitimiert.
 
 # Statistische Modellierung
 
@@ -252,7 +252,7 @@ Das initiale Regressionsmodell schliesst alle 13 Prädiktoren ein. Die deutliche
 
 Die Analyse der Regressionskoeffizienten identifiziert sechs signifikante, unabhängige Risikofaktoren für eine KHK: Anzahl der verengten Gefässe (`ca`, $p < 0.001$), erhöhter Ruheblutdruck (`trestbps`, $p = 0.001$), männliches Geschlecht (`sex`, $p = 0.002$), abnormale Szintigraphie (`thal`, $p = 0.003$), Brustschmerztyp (`cp`, $p = 0.004$) sowie eine niedrigere maximale Herzfrequenz (`thalach`, $p = 0.020$).
 
-**Multikollinearität**
+**Redundanz im multivariaten Kontext**
 
 Auffällig ist, dass Variablen wie Alter (`age`, $p = 0.825$) oder Serumcholesterin (`chol`, $p = 0.296$) im multivariaten Kontext ihre in der explorativen Analyse gezeigte Signifikanz verlieren. Da ihr physiologisches Risiko bereits durch direktere Parameter (wie Blutdruck oder Gefässstatus) abgebildet wird, liefern sie dem Modell keine zusätzliche Erklärungsleistung.
 
@@ -340,6 +340,7 @@ Dieser essenzielle Sicherheitsgewinn geht mathematisch zwingend zulasten der Spe
 
 ```{r robustheit_berechnen, include=FALSE}
 train_kontrolle <- trainControl(method = "cv", number = 10)
+set.seed(42)
 cv_logreg <- train(target ~ sex + cp + trestbps + fbs + thalach + exang + slope + ca + thal,
                    data = df_modell, method = "glm", family = "binomial", trControl = train_kontrolle)
 set.seed(42)
@@ -354,7 +355,7 @@ Die Evaluation am fixen Testset liefert eine erste Schätzung der Modellgüte. U
 
 **Methodischer Hinweis:** Die Kreuzvalidierung wurde auf dem gesamten Datensatz mit dem bereits selektierten Variablenset durchgeführt. Da die Variablenselektion nicht innerhalb jedes Folds wiederholt wurde, kann die resultierende Accuracy-Schätzung leicht nach oben verzerrt sein. Für eine konservativere Schätzung wäre eine Nested Cross-Validation erforderlich, bei der die Rückwärtsselektion innerhalb jedes Folds erneut durchgeführt wird.
 
-**Machine-Learning-Vergleich: Logistische Regression vs. Random Forest** Abschliessend wurde das klassische statistische Verfahren dem modernen Ensemble-Lernalgorithmus Random Forest gegenübergestellt. Unter identischen Resampling-Bedingungen (10-Fold CV, identisches 9-Variablen-Set) erzielt der Random Forest bei optimalem Hyperparameter eine Accuracy von `r round(cv_rf$results[which.max(cv_rf$results$Accuracy), "Accuracy"] * 100, 1)` % und einen Kappa-Wert von `r round(cv_rf$results[which.max(cv_rf$results$Accuracy), "Kappa"], 2)`. Der baumbasierte Algorithmus erbringt folglich keine signifikante Leistungssteigerung gegenüber dem linearen Verfahren.
+**Machine-Learning-Vergleich: Logistische Regression vs. Random Forest** Abschliessend wurde das klassische statistische Verfahren dem modernen Ensemble-Lernalgorithmus Random Forest gegenübergestellt. Unter identischen Resampling-Bedingungen (10-Fold CV, identisches 9-Variablen-Set) erzielt der Random Forest bei optimalem Hyperparameter eine Accuracy von `r round(cv_rf$results[which.max(cv_rf$results$Accuracy), "Accuracy"] * 100, 1)` % und einen Kappa-Wert von `r round(cv_rf$results[which.max(cv_rf$results$Accuracy), "Kappa"], 2)`. Der baumbasierte Algorithmus erbringt folglich keine nennenswerte Leistungssteigerung gegenüber dem linearen Verfahren.
 
 
 ```{r robustheit_cv, results='markup'}
@@ -542,7 +543,9 @@ Zweitens entstammt der Datensatz dem Jahr 1989. Die medizinische Demografie sowi
 
 Drittens ist die finale Stichprobengrösse von n = `r nrow(df_modell)` für moderne Machine-Learning-Verhältnisse gering.
 
-Viertens beschränkt sich das Modell auf einfache Laborparameter. Moderne, spezifische Blutbiomarker wie das LDL-Cholesterin, Entzündungsparameter (hs-CRP) oder hochsensitives Troponin fehlen in den Daten, würden die Trennschärfe des Modells in der Praxis jedoch zweifellos weiter erhöhen.
+Viertens wurden die mehrstufigen kategorialen Variablen Brustschmerztyp (`cp`), Thallium-Szintigraphie (`thal`), ST-Steigung (`slope`) und Ruhe-EKG (`restecg`) im vorliegenden Modell als metrisch kodiert behandelt. Dies impliziert eine lineare Beziehung zwischen Kodierungswert und Log-Odds, die bei nominalen Variablen nicht zwingend gegeben ist. Eine explorative Vergleichsanalyse mit faktorisierten Variablen ergab, dass insbesondere bei `cp` kein linearer Trend vorliegt – lediglich die asymptomatische Kategorie (cp = 4) unterscheidet sich signifikant von den übrigen Ausprägungen. Im vollen Modell war der Einfluss der Faktorisierung auf die Diskriminierungsfähigkeit gering (AUC-Differenz < 0.01). Im 6-Variablen-Screening-Modell, in dem nur `cp` betroffen ist, zeigte die faktorisierte Variante eine leicht niedrigere Sensitivität bei gleichzeitig höherer Spezifität. Da die Differenzen bei der vorliegenden Stichprobengrösse im Bereich des Stichprobenzufalls liegen, wurde die numerische Kodierung beibehalten. Für eine Weiterentwicklung des Modells wäre eine konsequente Faktorisierung dennoch empfehlenswert.
+
+Fünftens beschränkt sich das Modell auf einfache Laborparameter. Moderne, spezifische Blutbiomarker wie das LDL-Cholesterin, Entzündungsparameter (hs-CRP) oder hochsensitives Troponin fehlen in den Daten, würden die Trennschärfe des Modells in der Praxis jedoch zweifellos weiter erhöhen.
 
 Schliesslich wurde keine formale Kalibrierungsprüfung (z. B. Hosmer-Lemeshow-Test oder Kalibrierungsplot) durchgeführt. Ohne den Nachweis, dass die vom Modell geschätzten Wahrscheinlichkeiten den tatsächlichen Erkrankungsraten entsprechen, ist die Interpretation der Modellausgabe als Pre-Test Probability im strengen klinischen Sinne nur eingeschränkt zulässig.
 
