@@ -555,3 +555,8 @@ Für zukünftige Entwicklungen wäre ein zweistufiges Kaskaden-Screening-Modell 
 
 Darüber hinaus eröffnet die Verbreitung von Smartwatches neue diagnostische Perspektiven. Zukünftige Modelle könnten mit Echtzeit-Datenströmen (wie Herzfrequenzvariabilität oder 1-Kanal-EKG) trainiert werden. Ein solches, auf kontinuierlichem Monitoring basierendes Modell könnte Warnsignale für eine chronische Ischämie bereits detektieren, noch bevor der Patient aufgrund akuter Brustschmerzen den Arzt aufsucht. Die Kombination aus interpretierbaren statistischen Verfahren und modernen Sensordaten stellt einen vielversprechenden Pfad für die präventive Kardiologie dar.
 
+## Benutzung von generativer künstlicher Intelligenz (KI)
+
+Bei der Erstellung dieser Arbeit wurden generative KI-Tools, darunter Claude (Anthropic), Gemini und ChatGPT als unterstützende Hilfsmittel eingesetzt. Die KI-Assistenz umfang folgende Bereiche: sprachliche Formulierung und Überarbeitung von Textabschnitten, strukturelles Feedback zum Aufbau des Berichts, Verbesserungen des Codes sowie die Vorbereitung von Präsentationsinhalten.
+
+Sämtliche statistischen Analysen, Modellierungsentscheide und inhaltlichen Interpretationen wurden von den Autorinnen und Autoren in R durchgeführt und überprüft. Der Einsatz von KI-Tools ersetzte zu keinem Zeitpunkt das eigenständige wissenschaftliche Urteilsvermögen.
