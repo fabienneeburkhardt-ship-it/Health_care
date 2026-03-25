@@ -65,3 +65,4 @@ ggsave("Histogramm_RepeatedRandomSubsampling_Transparent.png", plot = plot_mc,
        width = 7, height = 5, dpi = 300, bg = "transparent")
 
 print("Erfolg! Beide Plots wurden mit transparentem Hintergrund in deinem Projektordner gespeichert.")
+
