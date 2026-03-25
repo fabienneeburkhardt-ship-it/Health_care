@@ -1988,7 +1988,7 @@ Prädiktoren geschätzt. Dies lieferte einen initialen AIC-Wert von 164.5.
 Da zu komplexe Modelle anfällig für Overfitting sind, wurde das
 Basismodell in einem zweiten Schritt durch eine systematische
 Rückwärts-Selektion (<code>step()</code>) optimiert. Dadurch wurden
-iterativ jene Variablen entfernt deren Ausschluss den AIC-Wert
+iterativ jene Variablen entfernt, deren Ausschluss den AIC-Wert
 verbesserte. Das resultierende Modell umfasst lediglich noch neun
 Prädiktoren. Durch diese Reduktion sank der AIC-Wert deutlich auf
 159.8.</p>
@@ -2265,14 +2265,14 @@ für die translationale Anwendung in der ärztlichen Primärversorgung.</p>
 <div id="transfer-in-die-klinische-praxis-das-screening-modell" class="section level1" number="7">
 <h1><span class="header-section-number">7</span> Transfer in die
 klinische Praxis: Das Screening-Modell</h1>
-<p>Obwohl das entwickelte 9-Variablen-Modell eine exzellente Güte
-aufweist, stösst es in der Hausarztpraxis auf Limitierungen. Die
-Parameter wie die Anzahl verengter Hauptgefässe (<code>ca</code>) oder
-das Ergebnis der Thallium-Szintigraphie (<code>thal</code>) setzen jene
-invasiven Untersuchungen voraus, deren Notwendigkeit durch ein
-Screening-Modell erst ermittelt werden soll. Ein praxistaugliches
-Gatekeeper-Instrument muss sich daher auf Basisparameter beschränken,
-die im Erstkontakt ohne technischen Aufwand erhoben werden können.</p>
+<p>Obwohl das entwickelte 9-Variablen-Modell eine hohe Güte aufweist,
+stösst es in der Hausarztpraxis auf Limitierungen. Die Parameter wie die
+Anzahl verengter Hauptgefässe (<code>ca</code>) oder das Ergebnis der
+Thallium-Szintigraphie (<code>thal</code>) setzen jene invasiven
+Untersuchungen voraus, deren Notwendigkeit durch ein Screening-Modell
+erst ermittelt werden soll. Ein praxistaugliches Gatekeeper-Instrument
+muss sich daher auf Basisparameter beschränken, die im Erstkontakt ohne
+technischen Aufwand erhoben werden können.</p>
 <p>Die ESC-Leitlinien für chronische Koronarsyndrome (2024) empfehlen
 ein stufenweises Vorgehen. Als erster Schritt soll anhand einfacher
 Parameter – Alter, Geschlecht und Symptomcharakter – eine klinische
@@ -2409,14 +2409,14 @@ Datenaufteilung (Repeated Random Subsampling) unterzogen (Kuhn,
 <p>Die Evaluation am konservativen ESC-Rule-out-Schwellenwert (&lt; 15 %
 KHK-Wahrscheinlichkeit) belegt die hohe prädiktive Stabilität des
 entwickelten Gatekeeper-Tools: Über 100 völlig ungesehene Testdatensätze
-hinweg konvergiert die durchschnittliche Sensitivität bei hervorragenden
-94.2 %. Im Mittel werden dabei weniger als 2.5 erkrankte Patienten pro
-Testset nicht erkannt. Das Modell beweist somit seine konstante, robuste
-Fähigkeit, lebensbedrohliche KHK-Fälle zuverlässig zu identifizieren und
-das Risiko falsch-negativer Triage-Entscheidungen zu minimieren (Altman
-&amp; Bland, 1994).</p>
+hinweg konvergiert die durchschnittliche Sensitivität bei 94.2 %. Im
+Mittel werden dabei weniger als 2.5 erkrankte Patienten pro Testset
+nicht erkannt. Das Modell zeigt somit eine konstante, robuste Fähigkeit,
+lebensbedrohliche KHK-Fälle zuverlässig zu identifizieren und das Risiko
+falsch-negativer Triage-Entscheidungen zu minimieren (Altman &amp;
+Bland, 1994).</p>
 <p>Parallel dazu stabilisiert sich die durchschnittliche Spezifität bei
-34.1 %. Das bedeutet, dass das Modell über alle Simulationsdurchläufe
+34.1 %. Das bedeutet, dass das Modell über alle Subsampling-Durchläufe
 hinweg im Mittel über ein Drittel der herzgesunden Personen sicher und
 korrekt aus dem klinischen Pfad ausschliesst. Diese Werte stützen die
 Eignung des Modells als non-invasiver Vorfilter in der
