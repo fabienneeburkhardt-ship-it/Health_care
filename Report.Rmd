@@ -117,9 +117,7 @@ df_modell <- na.omit(df_modell)
 
 Um ein tiefgreifendes Verständnis für die zugrundeliegende Datenstruktur zu gewinnen und erste Hypothesen abzuleiten, wurde eine umfassende explorative Datenanalyse (EDA) durchgeführt.
 
-Zunächst wurden die kategorialen Variablen mittels Kreuztabellen und Pearson-Chi-Quadrat-Tests auf ihre stochastische Unabhängigkeit geprüft. Hierbei zeigte sich ein hochsignifikanter Zusammenhang beim Brustschmerztyp (`cp`, p \< 0.001) und beim Geschlecht (`sex`, p \< 0.001).
-
-Für die kontinuierlichen Variablen wurden Varianzanalysen (ANOVA) durchgeführt. Die Ergebnisse belegen, dass sich erkrankte Patienten hinsichtlich ihres höheren Alters (`age`, p \< 0.001), eines höheren Ruheblutdrucks (`trestbps`, p = 0.008) und insbesondere einer deutlich niedrigeren maximal erreichten Herzfrequenz (`thalach`, p \< 0.001) signifikant von der gesunden Gruppe unterscheiden.
+Zunächst wurden die kategorialen Variablen mittels Kreuztabellen und Pearson-Chi-Quadrat-Tests auf ihre stochastische Unabhängigkeit geprüft. Für die kontinuierlichen Variablen wurden Varianzanalysen (ANOVA) durchgeführt. 
 
 Abschliessend wurde eine Korrelationsmatrix aller numerischen Variablen erstellt, um potenzielle Multikollinearität zu prüfen. Die Inspektion der Matrix zeigt, dass die Korrelationen zwischen den unabhängigen Variablen in einem unkritischen Bereich liegen, weshalb alle Parameter in das initiale Basismodell aufgenommen werden können.
 
