@@ -234,7 +234,7 @@ modell_optimiert <- step(modell_voll, direction = "backward", trace = 0)
 
 Da die Zielvariable `target` nur zwei Ausprägungen hat (KHK vorhanden oder nicht), wird als Kernverfahren die logistische Regression eingesetzt. Das Verfahren schätzt für jeden Patienten eine Wahrscheinlichkeit im Intervall [0, 1], die als Indikator für das Vorliegen einer KHK interpretiert wird. 
 
-Um ein belastbares prädiktives Modell zu erstellen, wurde der Datensatz zunächst reproduzierbar in ein Trainingsset (70 %, n = `r nrow(train_data)`) und ein Testset (30 %, n = `r nrow(test_data)`) aufgeteilt. Sämtliche Modellparameter sowie die nachfolgende Variablenselektion wurden ausschliesslich auf dem Trainingsset durchgeführt. Das Testset wurde zur Evaluation der Vorhersagegüte sowie zur Schwellenwert-Analyse herangezogen. Aufgrund der Grösse des Datensatzes (n = `r nrow(df_modell)`) wurde auf eine weitere Aufteilung in separate Validierungs- und Testsets verzichtet. Die Robustheit der erzielten Ergebnisse wird stattdessen durch zwei komplementäre Verfahren abgesichert. Einerseits die 10-fache Kreuzvalidierung sowie die Monte-Carlo-Simulation mit 100 Iterationen. 
+Um ein belastbares prädiktives Modell zu erstellen, wurde der Datensatz zunächst reproduzierbar in ein Trainingsset (70 %, n = `r nrow(train_data)`) und ein Testset (30 %, n = `r nrow(test_data)`) aufgeteilt. Sämtliche Modellparameter sowie die nachfolgende Variablenselektion wurden ausschliesslich auf dem Trainingsset durchgeführt. Das Testset wurde zur Evaluation der Vorhersagegüte sowie zur Schwellenwert-Analyse herangezogen. Aufgrund der Grösse des Datensatzes (n = `r nrow(df_modell)`) wurde auf eine weitere Aufteilung in separate Validierungs- und Testsets verzichtet. Die Robustheit der erzielten Ergebnisse wird stattdessen durch zwei komplementäre Verfahren abgesichert. Einerseits die 10-fache Kreuzvalidierung sowie das Repeated Random Subsampling mit 100 Iterationen. 
 
 Die Modellentwicklung erfolgte in drei aufeinander aufbauenden Schritten. Im ersten Schritt wurde ein Basismodell mit allen 13 Prädiktoren geschätzt. Dies lieferte einen initialen AIC-Wert von `r round(modell_voll$aic, 1)`. Da zu komplexe Modelle anfällig für Overfitting sind, wurde das Basismodell in einem zweiten Schritt durch eine systematische Rückwärts-Selektion (`step()`) optimiert. Dadurch wurden iterativ jene Variablen entfernt deren Ausschluss den AIC-Wert verbesserte. Das resultierende Modell umfasst lediglich noch neun Prädiktoren. Durch diese Reduktion sank der AIC-Wert deutlich auf `r round(modell_optimiert$aic, 1)`.
 
@@ -313,7 +313,7 @@ Die Konfusionsmatrix quantifiziert die prädiktive Klassifikationsleistung des o
 
 **ROC-Analyse und Diskriminierungsfähigkeit**
 
-Die Receiver Operating Characteristic (ROC)-Kurve visualisiert den Kompromiss (Trade-off) zwischen Sensitivität und Spezifität über sämtliche potenziellen Schwellenwerte hinweg. Der Verlauf der Kurve in Richtung des oberen linken Quadranten indiziert eine hohe Modellgüte. Quantifiziert wird diese Leistungsfähigkeit durch die Fläche unter der Kurve (Area Under the Curve, AUC). Mit einem exzellenten AUC-Wert von `r round(auc(roc_kurve), 3)` belegt das Modell eine hohe, schwellenwertunabhängige Diskriminierungsfähigkeit. Es ist in der Lage, hochgradig verlässlich zwischen gesunden und KHK-erkrankten Patienten zu trennen und qualifiziert sich damit robust für die anschliessende Schwellenwert-Rekalibrierung.
+Die Receiver Operating Characteristic (ROC)-Kurve visualisiert den Kompromiss (Trade-off) zwischen Sensitivität und Spezifität über sämtliche potenziellen Schwellenwerte hinweg. Der Verlauf der Kurve in Richtung des oberen linken Quadranten indiziert eine hohe Modellgüte. Quantifiziert wird diese Leistungsfähigkeit durch die Fläche unter der Kurve (Area Under the Curve, AUC). Mit einem AUC-Wert von `r round(auc(roc_kurve), 3)` belegt das Modell eine hohe, schwellenwertunabhängige Diskriminierungsfähigkeit. Es ist in der Lage, hochgradig verlässlich zwischen gesunden und KHK-erkrankten Patienten zu trennen und qualifiziert sich damit robust für die anschliessende Schwellenwert-Rekalibrierung.
 
 ## Klinische Rekalibrierung (20%)
 
@@ -344,7 +344,9 @@ cv_logreg <- train(target ~ sex + cp + trestbps + fbs + thalach + exang + slope 
                    data = df_modell, method = "glm", family = "binomial", trControl = train_kontrolle)
 set.seed(42)
 cv_rf <- train(target ~ sex + cp + trestbps + fbs + thalach + exang + slope + ca + thal,
-               data = df_modell, method = "rf", trControl = train_kontrolle)
+               data = df_modell, method = "rf",
+               tuneGrid = data.frame(mtry = c(2, 3, 5)),
+               trControl = train_kontrolle)
 ```
 Die Evaluation am fixen Testset liefert eine erste Schätzung der Modellgüte. Um auszuschliessen, dass diese Ergebnisse von der spezifischen Datenaufteilung abhängen, wird das Modell nachfolgend einer weiterführenden Robustheitsprüfung unterzogen. Ergänzend wird die logistische Regression dem Random Forest gegenübergestellt, um die Methodenwahl empirisch zu validieren.
 
@@ -352,14 +354,14 @@ Die Evaluation am fixen Testset liefert eine erste Schätzung der Modellgüte. U
 
 **Methodischer Hinweis:** Die Kreuzvalidierung wurde auf dem gesamten Datensatz mit dem bereits selektierten Variablenset durchgeführt. Da die Variablenselektion nicht innerhalb jedes Folds wiederholt wurde, kann die resultierende Accuracy-Schätzung leicht nach oben verzerrt sein. Für eine konservativere Schätzung wäre eine Nested Cross-Validation erforderlich, bei der die Rückwärtsselektion innerhalb jedes Folds erneut durchgeführt wird.
 
-**Machine-Learning-Vergleich: Logistische Regression vs. Random Forest** Abschliessend wurde das klassische statistische Verfahren dem modernen Ensemble-Lernalgorithmus Random Forest gegenübergestellt. Unter identischen Resampling-Bedingungen (10-Fold CV) erzielt der Random Forest (bei einem optimierten Hyperparameter von `mtry = 2`) eine Accuracy von `r round(cv_rf$results[cv_rf$results$mtry == 2, "Accuracy"] * 100, 1)` % und einen Kappa-Wert von `r round(cv_rf$results[cv_rf$results$mtry == 2, "Kappa"], 2)`. Der baumbasierte Algorithmus erbringt folglich keine signifikante Leistungssteigerung gegenüber dem linearen Verfahren.
+**Machine-Learning-Vergleich: Logistische Regression vs. Random Forest** Abschliessend wurde das klassische statistische Verfahren dem modernen Ensemble-Lernalgorithmus Random Forest gegenübergestellt. Unter identischen Resampling-Bedingungen (10-Fold CV, identisches 9-Variablen-Set) erzielt der Random Forest bei optimalem Hyperparameter eine Accuracy von `r round(cv_rf$results[which.max(cv_rf$results$Accuracy), "Accuracy"] * 100, 1)` % und einen Kappa-Wert von `r round(cv_rf$results[which.max(cv_rf$results$Accuracy), "Kappa"], 2)`. Der baumbasierte Algorithmus erbringt folglich keine signifikante Leistungssteigerung gegenüber dem linearen Verfahren.
 
 
 ```{r robustheit_cv, results='markup'}
 print("--- Logistische Regression (10-Fold CV) ---")
 print(cv_logreg$results)
 print("--- Random Forest (10-Fold CV) ---")
-print(cv_rf$results[cv_rf$results$mtry == 2, ])
+print(cv_rf$results)
 ```
 
 **Medizinisch-klinische Schlussfolgerung** Im Kontext eines Clinical Decision Support Systems (CDSS) ist dieses Ergebnis hochrelevant. Der Random Forest agiert als intransparentes "Black-Box"-Modell, dessen innere Entscheidungswege (welcher Baum trifft welche Entscheidung) für das medizinische Personal kaum nachvollziehbar sind. Die logistische Regression bietet hingegen als "White-Box"-Verfahren volle Transparenz (Explainable AI): Der Einfluss jedes Prädiktors lässt sich exakt quantifizieren (via Koeffizienten und Odds Ratios). Da die logistische Regression dem komplexeren Machine-Learning-Algorithmus prädiktiv ebenbürtig, hier sogar marginal überlegen, ist, qualifiziert sie sich aufgrund ihrer hohen Interpretierbarkeit eindeutig als das methodisch überlegene Verfahren für die translationale Anwendung in der ärztlichen Primärversorgung.
@@ -393,7 +395,7 @@ triage_ergebnisse <- table(Vorhersage = esc_triage, Tatsaechliche_Diagnose = tes
 
 Es wurde ein stark reduziertes logistisches Regressionsmodell trainiert, das sich ausschliesslich auf sechs non-invasive Basisparameter fokussiert: Alter (`age`), Geschlecht (`sex`), Brustschmerztyp (`cp`), Ruheblutdruck (`trestbps`), Serumcholesterin (`chol`) und Nüchternblutzucker (`fbs`). Sämtliche sechs Parameter sind in einer typischen Hausarztpraxis ohne Überweisung oder Spezialtechnik erhebbar und gelten seit Jahrzehnten als Grundlage der kardiovaskulären Risikobeurteilung (D’Agostino et al., 2008).
 
-Der Entscheidungsschwellenwert des Modells wurde bewusst auf 15 % gesetzt, was deutlich niedriger ist als der übliche Wert von 50 %. Grund dafür ist, dass es im Screening weniger problematisch ist es, einen Patienten fälschlicherweise als krank einzustufen (falsch-positiv), als eine tatsächliche Erkrankung zu übersehen (falsch-negativ). Dieses Vorgehen wird in der Literatur als Rule-out-Strategie bezeichnet und entspricht den Leitlinien der ESC (Vrints et al., 2024).
+Der Entscheidungsschwellenwert des Modells wurde bewusst auf 15 % gesetzt, was deutlich niedriger ist als der übliche Wert von 50 %. Grund dafür ist, dass es im Screening weniger problematisch ist, einen Patienten fälschlicherweise als krank einzustufen (falsch-positiv), als eine tatsächliche Erkrankung zu übersehen (falsch-negativ). Dieses Vorgehen wird in der Literatur als Rule-out-Strategie bezeichnet und entspricht den Leitlinien der ESC (Vrints et al., 2024).
 
 Die Auswertung des Modells zeigt, dass dieser Entscheid gut funktioniert. Bei einem Schwellenwert von 15 % erreicht es eine Sensitivität von `r round(matrix_screening$byClass["Sensitivity"] * 100, 1)` %, was bedeutet, dass das Modell alle erkrankten Patienten korrekt erkennt. Dies geht erwartungsgemäss mit einer niedrigen Spezifität von `r round(matrix_screening$byClass["Specificity"] * 100, 1)` % einher. Dies heisst, dass auch viele gesunde Personen fälschlich als Risikofall eingestuft werden. Im Kontext des Screening-Modells ist dies jedoch kein Widerspruch. Das Ziel ist nicht eine abschliessende Diagnose, sondern eine ESC-konforme Ersteinstufung in drei Risikopfade. Dies wurde also bewusst in Kauf genommen, da falsch-positive Befunde zwar zu weiterer Abklärung und vorübergehender psychologischer Belastung führen können, die potenziellen Konsequenzen einer übersehenen KHK jedoch schwerer wiegen. Das Modell agiert damit bewusst als konservativer, non-invasiver Filter, dessen primäre Aufgabe das sichere Ausschlussverfahren (Rule-out) ist.
 
@@ -454,7 +456,7 @@ print("--- ERGEBNISSE NACH 100 RANDOM SPLITS (ESC Rule-out bei 15%) ---")
 print(ergebnisse_mc)
 ```
 
-Um methodisch abzusichern, dass die hohe Sensitivität des zuvor evaluierten Screening-Modells nicht auf einer zufällig vorteilhaften Datenaufteilung (Lucky Split) basiert, wurde das 6-Variablen-Modell einer Robustheitsprüfung mittels 100-facher zufälliger Datenaufteilung (Repeated Random Subsampling) unterzogen. Durch das Hundertfache, zufällige Neuaufteilen (Resampling) der Trainings- und Testdaten wird der Algorithmus einer systematischen Robustheitsprüfung unterzogen (Kuhn, 2019).
+Um methodisch abzusichern, dass die hohe Sensitivität des zuvor evaluierten Screening-Modells nicht auf einer zufällig vorteilhaften Datenaufteilung (Lucky Split) basiert, wurde das 6-Variablen-Modell einer systematischen Robustheitsprüfung mittels 100-facher zufälliger Datenaufteilung (Repeated Random Subsampling) unterzogen (Kuhn, 2019).
 
 Die Evaluation am konservativen ESC-Rule-out-Schwellenwert (\< 15 % KHK-Wahrscheinlichkeit) belegt die hohe prädiktive Stabilität des entwickelten Gatekeeper-Tools: Über 100 völlig ungesehene Testdatensätze hinweg konvergiert die durchschnittliche Sensitivität bei hervorragenden `r round(mean(sens_liste) * 100, 1)` %. Im Mittel werden dabei weniger als 2.5 erkrankte Patienten pro Testset nicht erkannt. Das Modell beweist somit seine konstante, robuste Fähigkeit, lebensbedrohliche KHK-Fälle zuverlässig zu identifizieren und das Risiko falsch-negativer Triage-Entscheidungen zu minimieren (Altman & Bland, 1994).
 

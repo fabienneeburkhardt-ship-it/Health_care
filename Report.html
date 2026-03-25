@@ -1980,8 +1980,8 @@ Vorhersagegüte sowie zur Schwellenwert-Analyse herangezogen. Aufgrund
 der Grösse des Datensatzes (n = 297) wurde auf eine weitere Aufteilung
 in separate Validierungs- und Testsets verzichtet. Die Robustheit der
 erzielten Ergebnisse wird stattdessen durch zwei komplementäre Verfahren
-abgesichert. Einerseits die 10-fache Kreuzvalidierung sowie die
-Monte-Carlo-Simulation mit 100 Iterationen.</p>
+abgesichert. Einerseits die 10-fache Kreuzvalidierung sowie das Repeated
+Random Subsampling mit 100 Iterationen.</p>
 <p>Die Modellentwicklung erfolgte in drei aufeinander aufbauenden
 Schritten. Im ersten Schritt wurde ein Basismodell mit allen 13
 Prädiktoren geschätzt. Dies lieferte einen initialen AIC-Wert von 164.5.
@@ -2146,8 +2146,8 @@ Kompromiss (Trade-off) zwischen Sensitivität und Spezifität über
 sämtliche potenziellen Schwellenwerte hinweg. Der Verlauf der Kurve in
 Richtung des oberen linken Quadranten indiziert eine hohe Modellgüte.
 Quantifiziert wird diese Leistungsfähigkeit durch die Fläche unter der
-Kurve (Area Under the Curve, AUC). Mit einem exzellenten AUC-Wert von
-0.884 belegt das Modell eine hohe, schwellenwertunabhängige
+Kurve (Area Under the Curve, AUC). Mit einem AUC-Wert von 0.884 belegt
+das Modell eine hohe, schwellenwertunabhängige
 Diskriminierungsfähigkeit. Es ist in der Lage, hochgradig verlässlich
 zwischen gesunden und KHK-erkrankten Patienten zu trennen und
 qualifiziert sich damit robust für die anschliessende
@@ -2231,10 +2231,10 @@ jedes Folds erneut durchgeführt wird.</p>
 <p><strong>Machine-Learning-Vergleich: Logistische Regression vs. Random
 Forest</strong> Abschliessend wurde das klassische statistische
 Verfahren dem modernen Ensemble-Lernalgorithmus Random Forest
-gegenübergestellt. Unter identischen Resampling-Bedingungen (10-Fold CV)
-erzielt der Random Forest (bei einem optimierten Hyperparameter von
-<code>mtry = 2</code>) eine Accuracy von 81.5 % und einen Kappa-Wert von
-0.63. Der baumbasierte Algorithmus erbringt folglich keine signifikante
+gegenübergestellt. Unter identischen Resampling-Bedingungen (10-Fold CV,
+identisches 9-Variablen-Set) erzielt der Random Forest bei optimalem
+Hyperparameter eine Accuracy von 81.5 % und einen Kappa-Wert von 0.63.
+Der baumbasierte Algorithmus erbringt folglich keine signifikante
 Leistungssteigerung gegenüber dem linearen Verfahren.</p>
 <pre class="r"><code>print(&quot;--- Logistische Regression (10-Fold CV) ---&quot;)</code></pre>
 <pre><code>## [1] &quot;--- Logistische Regression (10-Fold CV) ---&quot;</code></pre>
@@ -2243,9 +2243,11 @@ Leistungssteigerung gegenüber dem linearen Verfahren.</p>
 ## 1      none 0.8418391 0.6809017 0.05427971 0.108043</code></pre>
 <pre class="r"><code>print(&quot;--- Random Forest (10-Fold CV) ---&quot;)</code></pre>
 <pre><code>## [1] &quot;--- Random Forest (10-Fold CV) ---&quot;</code></pre>
-<pre class="r"><code>print(cv_rf$results[cv_rf$results$mtry == 2, ])</code></pre>
-<pre><code>##   mtry  Accuracy     Kappa AccuracySD  KappaSD
-## 1    2 0.8151724 0.6254215 0.07012185 0.142828</code></pre>
+<pre class="r"><code>print(cv_rf$results)</code></pre>
+<pre><code>##   mtry  Accuracy     Kappa AccuracySD   KappaSD
+## 1    2 0.8151724 0.6254215 0.07012185 0.1428280
+## 2    3 0.7981609 0.5916050 0.07389016 0.1489437
+## 3    5 0.7913793 0.5781419 0.06818901 0.1376606</code></pre>
 <p><strong>Medizinisch-klinische Schlussfolgerung</strong> Im Kontext
 eines Clinical Decision Support Systems (CDSS) ist dieses Ergebnis
 hochrelevant. Der Random Forest agiert als intransparentes
@@ -2293,7 +2295,7 @@ erhebbar und gelten seit Jahrzehnten als Grundlage der kardiovaskulären
 Risikobeurteilung (D’Agostino et al., 2008).</p>
 <p>Der Entscheidungsschwellenwert des Modells wurde bewusst auf 15 %
 gesetzt, was deutlich niedriger ist als der übliche Wert von 50 %. Grund
-dafür ist, dass es im Screening weniger problematisch ist es, einen
+dafür ist, dass es im Screening weniger problematisch ist, einen
 Patienten fälschlicherweise als krank einzustufen (falsch-positiv), als
 eine tatsächliche Erkrankung zu übersehen (falsch-negativ). Dieses
 Vorgehen wird in der Literatur als Rule-out-Strategie bezeichnet und
@@ -2401,11 +2403,9 @@ print(&quot;--- ERGEBNISSE NACH 100 RANDOM SPLITS (ESC Rule-out bei 15%) ---&quo
 <p>Um methodisch abzusichern, dass die hohe Sensitivität des zuvor
 evaluierten Screening-Modells nicht auf einer zufällig vorteilhaften
 Datenaufteilung (Lucky Split) basiert, wurde das 6-Variablen-Modell
-einer Robustheitsprüfung mittels 100-facher zufälliger Datenaufteilung
-(Repeated Random Subsampling) unterzogen. Durch das Hundertfache,
-zufällige Neuaufteilen (Resampling) der Trainings- und Testdaten wird
-der Algorithmus einer systematischen Robustheitsprüfung unterzogen
-(Kuhn, 2019).</p>
+einer systematischen Robustheitsprüfung mittels 100-facher zufälliger
+Datenaufteilung (Repeated Random Subsampling) unterzogen (Kuhn,
+2019).</p>
 <p>Die Evaluation am konservativen ESC-Rule-out-Schwellenwert (&lt; 15 %
 KHK-Wahrscheinlichkeit) belegt die hohe prädiktive Stabilität des
 entwickelten Gatekeeper-Tools: Über 100 völlig ungesehene Testdatensätze
