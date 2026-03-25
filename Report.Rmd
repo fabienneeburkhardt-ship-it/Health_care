@@ -58,7 +58,7 @@ In der klinischen Praxis stellt die Erstdiagnostik eine erhebliche Herausforderu
 
 Vor diesem medizinischen und gesundheitsökonomischen Hintergrund leitet sich die zentrale Forschungsfrage dieser Arbeit ab: **Mit welcher diagnostischen Genauigkeit lässt sich das Vorliegen einer koronaren Herzkrankheit durch physiologische und klinische Parameter vorhersagen?**
 
-Um diese Frage zu beantworten, verfolgt die vorliegende Arbeit ein zweistufiges Ziel: Im ersten Schritt wird anhand des historischen "Cleveland Heart Disease"-Datensatzes ein statistisch optimiertes Klassifikationsmodell (logistische Regression) entwickelt und evaluiert. Im zweiten Schritt liegt der Fokus auf der praktischen Translation: Ziel ist es, aus den statistischen Erkenntnissen ein praxistaugliches, Screening-Tool zu extrahieren. Dieses soll ausschliesslich auf einfach zu erfassenden Basisparametern beruhen und sich an den aktuellen Triage-Leitlinien der European Society of Cardiology (ESC) orientieren. Das finale Modell wird schliesslich in einen Prototyp eines interaktiven Clinical Decision Support Systems (CDSS) überführt.
+Um diese Frage zu beantworten, verfolgt die vorliegende Arbeit ein zweistufiges Ziel: Im ersten Schritt wird anhand des historischen "Cleveland Heart Disease"-Datensatzes ein statistisch optimiertes Klassifikationsmodell (logistische Regression) entwickelt und evaluiert. Im zweiten Schritt liegt der Fokus auf der praktischen Translation: Ziel ist es, aus den statistischen Erkenntnissen ein praxistaugliches Screening-Tool zu extrahieren. Dieses soll ausschliesslich auf einfach zu erfassenden Basisparametern beruhen und sich an den aktuellen Triage-Leitlinien der European Society of Cardiology (ESC) orientieren. Das finale Modell wird schliesslich in einen Prototyp eines interaktiven Clinical Decision Support Systems (CDSS) überführt.
 
 # Datengrundlage & Datenaufbereitung
 
@@ -66,7 +66,7 @@ Für die vorliegende Analyse wurde der "Cleveland Heart Disease"-Datensatz aus d
 
 Ein zentraler methodischer Schritt der Datenaufbereitung war die Transformation der abhängigen Zielvariable `num`. Im Originaldatensatz gibt diese den angiografischen Schweregrad der koronaren Herzkrankheit auf einer Skala von 0 (keine Gefässverengung) bis 4 (schwere Mehrgefässerkrankung) an. Für die Zwecke dieser Arbeit wurde diese multikategoriale Variable in eine binäre Klassifikation überführt: Der Wert 0 wurde als "gesund" (Klasse 0) beibehalten, während sämtliche Ausprägungen von 1 bis 4 unter der Klasse "krank" (Klasse 1) zusammengefasst wurden.
 
-Diese Binarisierung ist primär in der geringen Stichprobengrösse begründet. Der Versuch, ein prädiktives Modell für fünf separate Ausprägungen auf Basis von lediglich 297 Patienten zu trainieren, würde zu einer massiven Zersplitterung der Daten (Class Imbalance) und somit zu instabilen Schätzern führen. Durch die Reduktion auf eine dichotome Fragestellung wird das Modell exakt auf die klinisch relevanteste Triage-Entscheidung fokussiert.
+Diese Binarisierung ist primär in der geringen Stichprobengrösse begründet. Der Versuch, ein prädiktives Modell für fünf separate Ausprägungen auf Basis von lediglich 297 Patienten zu trainieren, würde aufgrund dünnbesetzter Kategorien (Sparse Cells) zu instabilen Parameterschätzungen führen. Durch die Reduktion auf eine dichotome Fragestellung wird das Modell exakt auf die klinisch relevanteste Triage-Entscheidung fokussiert.
 
 ## Variablenübersicht
 
@@ -91,7 +91,7 @@ Der verwendete Cleveland-Datensatz umfasst nach der Bereinigung 14 klinisch rele
 
 ## Datenbereinigung im Code
 
-Im folgenden code werden die Daten wie zuvor beschrieben bereinigt und vorbereitet.
+Im folgenden Codeblock werden die Daten wie zuvor beschrieben bereinigt und vorbereitet.
 
 ```{r}
 heart_disease <- fetch_ucirepo(id = 45)
@@ -232,13 +232,13 @@ modell_voll      <- glm(target ~ ., data = train_data, family = "binomial")
 modell_optimiert <- step(modell_voll, direction = "backward", trace = 0)
 ```
 
-Da die Zielvariable `target` nur zwei Ausprägungen hat (KHK vorhanden oder nicht), wird als Kernverfahren die logistische Regression eingesetzt. Durch dieses Verfahren wird eine Wahrscheinlichkeit zwischen 0% und 100% für jeden Patienten berechnet, um zu sehen, ob eine KHK vorliegt. 
+Da die Zielvariable `target` nur zwei Ausprägungen hat (KHK vorhanden oder nicht), wird als Kernverfahren die logistische Regression eingesetzt. Das Verfahren schätzt für jeden Patienten eine Wahrscheinlichkeit im Intervall [0, 1], die als Indikator für das Vorliegen einer KHK interpretiert wird. 
 
 Um ein belastbares prädiktives Modell zu erstellen, wurde der Datensatz zunächst reproduzierbar in ein Trainingsset (70 %, n = `r nrow(train_data)`) und ein Testset (30 %, n = `r nrow(test_data)`) aufgeteilt. Sämtliche Modellparameter sowie die nachfolgende Variablenselektion wurden ausschliesslich auf dem Trainingsset durchgeführt. Das Testset wurde zur Evaluation der Vorhersagegüte sowie zur Schwellenwert-Analyse herangezogen. Aufgrund der Grösse des Datensatzes (n = `r nrow(df_modell)`) wurde auf eine weitere Aufteilung in separate Validierungs- und Testsets verzichtet. Die Robustheit der erzielten Ergebnisse wird stattdessen durch zwei komplementäre Verfahren abgesichert. Einerseits die 10-fache Kreuzvalidierung sowie die Monte-Carlo-Simulation mit 100 Iterationen. 
 
-Die Modellentwicklung erfolgte in drei aufeinander aufbauenden Schritten. Im ersten Schritt wurde ein Basismodell mit allen 13 Prädiktoren geschätzt. Dies lieferte einen initialen AIC-Wert von `r round(modell_voll$aic, 1)`. Da zu komplexe Modelle anfällig für Overfitting sind, wurde das Basismodell in einem zweiten Schritt durch eine systematische Rückwärts-Selektion (`step()`) optimiert. Dadurch wurden iterativ jene Variablen entfernt deren Ausschluss den AIC-Wert verbessern. Das resultierende Modell umfasst lediglich noch neun Prädiktoren. Durch diese Reduktion konnte der AIC-Wert signifikant auf `r round(modell_optimiert$aic, 1)` verbessert werden.
+Die Modellentwicklung erfolgte in drei aufeinander aufbauenden Schritten. Im ersten Schritt wurde ein Basismodell mit allen 13 Prädiktoren geschätzt. Dies lieferte einen initialen AIC-Wert von `r round(modell_voll$aic, 1)`. Da zu komplexe Modelle anfällig für Overfitting sind, wurde das Basismodell in einem zweiten Schritt durch eine systematische Rückwärts-Selektion (`step()`) optimiert. Dadurch wurden iterativ jene Variablen entfernt deren Ausschluss den AIC-Wert verbesserte. Das resultierende Modell umfasst lediglich noch neun Prädiktoren. Durch diese Reduktion sank der AIC-Wert deutlich auf `r round(modell_optimiert$aic, 1)`.
 
-Im dritten Schritt wurde ein reduziertes Modell entwickelt, das ausschliesslich sechs nicht-invasive Parameter erfasst. Dabei gelten Messungen, die ohne körperlichen Eingriff, Kontrastmittel oder apparative Spezialdiagnostik durchführbar sind als invasiv. Konkret sind dies Werte, die in der Regel in einer Hausarztpraxis routinemässig erhoben werden können. Die Variablenauswahl folgt dabei primär einer klinisch-praktischen Logik mit einem Fokus auf Einsatzbarkeit. 
+Im dritten Schritt wurde ein reduziertes Modell entwickelt, das ausschliesslich sechs nicht-invasive Parameter erfasst. Als non-invasiv gelten dabei Messungen, die ohne körperlichen Eingriff, Kontrastmittel oder apparative Spezialdiagnostik durchführbar sind – konkret Werte, die in einer Hausarztpraxis routinemässig erhoben werden. Die Variablenauswahl folgt primär einer klinisch-praktischen Logik mit Fokus auf niedrigschwellige Einsetzbarkeit. 
 
 ## Basismodell (13 Variablen)
 
@@ -256,7 +256,7 @@ Die Analyse der Regressionskoeffizienten identifiziert sechs signifikante, unabh
 
 Auffällig ist, dass Variablen wie Alter (`age`, $p = 0.825$) oder Serumcholesterin (`chol`, $p = 0.296$) im multivariaten Kontext ihre in der explorativen Analyse gezeigte Signifikanz verlieren. Da ihr physiologisches Risiko bereits durch direktere Parameter (wie Blutdruck oder Gefässstatus) abgebildet wird, liefern sie dem Modell keine zusätzliche Erklärungsleistung.
 
-Um ein Overfitting durch diese nicht-signifikanten Parameter zu vermeiden und das Modell praxistauglicher zu machen, wird es im nächsten Schritt mittels systematischer Rückwärts-Selektion dimensionsreduziert.
+Um die Gefahr einer Überanpassung an Rauschen im Trainingsdatensatz zu reduzieren und das Modell praxistauglicher zu machen, wird es im nächsten Schritt mittels systematischer Rückwärts-Selektion dimensionsreduziert.
 
 ## Optimiertes Modell (Rückwärts-Selektion)
 
@@ -313,7 +313,7 @@ Die Konfusionsmatrix quantifiziert die prädiktive Klassifikationsleistung des o
 
 **ROC-Analyse und Diskriminierungsfähigkeit**
 
-Die Receiver Operating Characteristic (ROC)-Kurve visualisiert den Kompromiss (Trade-off) zwischen Sensitivität und Spezifität über sämtliche potenziellen Schwellenwerte hinweg. Der Verlauf der Kurve in Richtung des oberen linken Quadranten indiziert eine hohe Modellgüte. Quantifiziert wird diese Leistungsfähigkeit durch die Fläche unter der Kurve (Area Under the Curve, AUC). Mit einem exzellenten AUC-Wert von `r round(auc(roc_kurve), 3)` belegt das Modell eine herausragende, schwellenwertunabhängige Diskriminierungsfähigkeit. Es ist in der Lage, hochgradig verlässlich zwischen gesunden und KHK-erkrankten Patienten zu trennen und qualifiziert sich damit robust für die anschliessende Schwellenwert-Rekalibrierung.
+Die Receiver Operating Characteristic (ROC)-Kurve visualisiert den Kompromiss (Trade-off) zwischen Sensitivität und Spezifität über sämtliche potenziellen Schwellenwerte hinweg. Der Verlauf der Kurve in Richtung des oberen linken Quadranten indiziert eine hohe Modellgüte. Quantifiziert wird diese Leistungsfähigkeit durch die Fläche unter der Kurve (Area Under the Curve, AUC). Mit einem exzellenten AUC-Wert von `r round(auc(roc_kurve), 3)` belegt das Modell eine hohe, schwellenwertunabhängige Diskriminierungsfähigkeit. Es ist in der Lage, hochgradig verlässlich zwischen gesunden und KHK-erkrankten Patienten zu trennen und qualifiziert sich damit robust für die anschliessende Schwellenwert-Rekalibrierung.
 
 ## Klinische Rekalibrierung (20%)
 
@@ -330,9 +330,9 @@ print(matrix_sensibel$byClass[c("Sensitivity", "Specificity")])
 print(paste("Genauigkeit (Accuracy):", round(matrix_sensibel$overall["Accuracy"], 3)))
 ```
 
-Die asymmetrischen Fehlklassifikationskosten im medizinischen Screening-Szenario erfordern eine praxisnahe Anpassung des Entscheidungsschwellenwerts. Ein falsch-negativer Befund (eine übersehene KHK) birgt potenziell fatale Konsequenzen. Darüber hinaus kann ein fälschlicherweise negativer Befund dazu beitragen, dass Patienten künftige Symptome als weniger besorgniserregend einordnen. Ein falsch-positiver Befund resultiert primär in weiteren diagnostischen Abklärungen und kann bis zum Zeitpunkt der weiteren Abklärung mit psychologischer Belastung verbunden sein. Im Gesamtbild bleibt die klinische Asymmetrie jedoch bestehen. Die potenziellen Konsequenzen einer übersehenen KHK wiegen in der Regel schwerer als jene einer unnötigen Weiterabklärung. 
+Um den Einfluss einer Schwellenwertverschiebung auf die diagnostische Güte zu explorieren, wird der Cut-off zunächst exemplarisch auf 20 % abgesenkt, bevor in Kapitel 7 der leitlinienkonforme ESC-Schwellenwert von 15 % eingeführt wird. Die asymmetrischen Fehlklassifikationskosten im medizinischen Screening-Szenario erfordern eine praxisnahe Anpassung des Entscheidungsschwellenwerts. Ein falsch-negativer Befund (eine übersehene KHK) birgt potenziell fatale Konsequenzen. Darüber hinaus kann ein fälschlicherweise negativer Befund dazu beitragen, dass Patienten künftige Symptome als weniger besorgniserregend einordnen. Ein falsch-positiver Befund resultiert primär in weiteren diagnostischen Abklärungen und kann bis zum Zeitpunkt der weiteren Abklärung mit psychologischer Belastung verbunden sein. Im Gesamtbild bleibt die klinische Asymmetrie jedoch bestehen. Die potenziellen Konsequenzen einer übersehenen KHK wiegen in der Regel schwerer als jene einer unnötigen Weiterabklärung. 
 
-Durch die bewusste Absenkung des Cut-offs von 50 % auf 20 % wird das Modell auf maximale Patientensicherheit rekalibriert. Die Evaluation dieser "übervorsichtigen" Konfiguration belegt den erwarteten Trade-off: Die Sensitivität steigt signifikant auf `r round(matrix_sensibel$byClass["Sensitivity"] * 100, 1)` %. Das Modell erkennt nun über 90 % der tatsächlich erkrankten Patienten im Testdatensatz und minimiert das Risiko lebensbedrohlicher Fehldiagnosen.
+Durch die bewusste Absenkung des Cut-offs von 50 % auf 20 % wird das Modell auf maximale Patientensicherheit rekalibriert. Die Evaluation dieser "übervorsichtigen" Konfiguration belegt den erwarteten Trade-off: Die Sensitivität steigt erwartungsgemäss auf `r round(matrix_sensibel$byClass["Sensitivity"] * 100, 1)` %. Das Modell erkennt nun über 90 % der tatsächlich erkrankten Patienten im Testdatensatz und minimiert das Risiko lebensbedrohlicher Fehldiagnosen.
 
 Dieser essenzielle Sicherheitsgewinn geht mathematisch zwingend zulasten der Spezifität, welche auf `r round(matrix_sensibel$byClass["Specificity"] * 100, 1)` % abfällt, sowie der Gesamtgenauigkeit (`r round(matrix_sensibel$overall["Accuracy"] * 100, 1)` %). Das Modell produziert folglich mehr falsch-positive Alarme (gesunde Patienten, die als potenziell krank eingestuft werden). Im primärmedizinischen Triage-Szenario (Gatekeeper-Funktion) ist dieser Effekt jedoch erwünscht und tolerabel, da die Priorität auf dem sicheren Ausschlussverfahren (Rule-out) der Risikopatienten liegt.
 
@@ -343,11 +343,14 @@ train_kontrolle <- trainControl(method = "cv", number = 10)
 cv_logreg <- train(target ~ sex + cp + trestbps + fbs + thalach + exang + slope + ca + thal,
                    data = df_modell, method = "glm", family = "binomial", trControl = train_kontrolle)
 set.seed(42)
-cv_rf <- train(target ~ ., data = df_modell, method = "rf", trControl = train_kontrolle)
+cv_rf <- train(target ~ sex + cp + trestbps + fbs + thalach + exang + slope + ca + thal,
+               data = df_modell, method = "rf", trControl = train_kontrolle)
 ```
-Die Evaluation am fixen Testset liefert eine erste Schätzung der Modellgüte. Um auszuschliessen, dass diese Ergebnisse von der spezifischen Datenaufteilung abhängen, wird das Modell nachfolgend einer weiterführenden Robustheitsprüfung unterzogen.Ergänzend wird die logistische Regression dem Random Forest gegenübergestellt, um die Methodenwahl empirisch zu validieren.
+Die Evaluation am fixen Testset liefert eine erste Schätzung der Modellgüte. Um auszuschliessen, dass diese Ergebnisse von der spezifischen Datenaufteilung abhängen, wird das Modell nachfolgend einer weiterführenden Robustheitsprüfung unterzogen. Ergänzend wird die logistische Regression dem Random Forest gegenübergestellt, um die Methodenwahl empirisch zu validieren.
 
 **Robustheitsprüfung mittels Kreuzvalidierung** Um die prädiktive Güte methodisch abzusichern und eine Verzerrung durch eine zufällig vorteilhafte Datenaufteilung (Overfitting an den spezifischen Train-Test-Split) auszuschliessen, wurde das reduzierte 9-Variablen-Modell einer 10-fachen Kreuzvalidierung (10-Fold Cross-Validation) unterzogen. Über alle zehn Folds hinweg erzielt die logistische Regression eine durchschnittliche Gesamtgenauigkeit (Accuracy) von `r round(cv_logreg$results$Accuracy * 100, 1)` % sowie einen soliden Cohens-Kappa-Wert von `r round(cv_logreg$results$Kappa, 2)`. Dies bestätigt die hohe Stabilität und Generalisierbarkeit des Regressionsmodells auf ungesehene Patientendaten.
+
+**Methodischer Hinweis:** Die Kreuzvalidierung wurde auf dem gesamten Datensatz mit dem bereits selektierten Variablenset durchgeführt. Da die Variablenselektion nicht innerhalb jedes Folds wiederholt wurde, kann die resultierende Accuracy-Schätzung leicht nach oben verzerrt sein. Für eine konservativere Schätzung wäre eine Nested Cross-Validation erforderlich, bei der die Rückwärtsselektion innerhalb jedes Folds erneut durchgeführt wird.
 
 **Machine-Learning-Vergleich: Logistische Regression vs. Random Forest** Abschliessend wurde das klassische statistische Verfahren dem modernen Ensemble-Lernalgorithmus Random Forest gegenübergestellt. Unter identischen Resampling-Bedingungen (10-Fold CV) erzielt der Random Forest (bei einem optimierten Hyperparameter von `mtry = 2`) eine Accuracy von `r round(cv_rf$results[cv_rf$results$mtry == 2, "Accuracy"] * 100, 1)` % und einen Kappa-Wert von `r round(cv_rf$results[cv_rf$results$mtry == 2, "Kappa"], 2)`. Der baumbasierte Algorithmus erbringt folglich keine signifikante Leistungssteigerung gegenüber dem linearen Verfahren.
 
@@ -365,7 +368,7 @@ print(cv_rf$results[cv_rf$results$mtry == 2, ])
 
 Obwohl das entwickelte 9-Variablen-Modell eine exzellente Güte aufweist, stösst es in der Hausarztpraxis auf Limitierungen. Die Parameter wie die Anzahl verengter Hauptgefässe (`ca`) oder das Ergebnis der Thallium-Szintigraphie (`thal`) setzen jene invasiven Untersuchungen voraus, deren Notwendigkeit durch ein Screening-Modell erst ermittelt werden soll. Ein praxistaugliches Gatekeeper-Instrument muss sich daher auf Basisparameter beschränken, die im Erstkontakt ohne technischen Aufwand erhoben werden können.
 
-Die Leitlinien der European Society of Cardiology (ESC) für Koronarsyndrome empfehlen seit 2024 ein stufenweises Vorgehen. Als erster Schritt, soll eine klinische Vorhersagewahrscheinlichkeit (auch PTP für Pre-Test Probability genannt), geschätzt werden durch einfache Parameter wie Alter, Geschlecht und Symptomcharakter, bevor andere aufwändigere Massnahmen eingeleitet werden. Zusätzlich werden Risikofaktoren wie Blutzucker und Blutdruck in diese Einschätzung mit einbezogen, jene Variablen, die auch im Hausarzt-Screening-Modell verwendet werden (Vrints et al., 2024).
+Die ESC-Leitlinien für chronische Koronarsyndrome (2024) empfehlen ein stufenweises Vorgehen. Als erster Schritt soll anhand einfacher Parameter – Alter, Geschlecht und Symptomcharakter – eine klinische Vortestwahrscheinlichkeit (Pre-Test Probability, PTP) geschätzt werden, bevor weiterführende Diagnostik eingeleitet wird. Zusätzlich werden Risikofaktoren wie Blutzucker und Blutdruck in diese Einschätzung mit einbezogen, jene Variablen, die auch im Hausarzt-Screening-Modell verwendet werden (Vrints et al., 2024).
 
 ## Entwicklung des Gatekeeper-Modells
 
@@ -388,9 +391,9 @@ esc_triage <- cut(wahrscheinlichkeiten_scr,
 triage_ergebnisse <- table(Vorhersage = esc_triage, Tatsaechliche_Diagnose = test_data_scr$target)
 ```
 
-Es wurde ein stark reduziertes logistisches Regressionsmodell trainiert, das sich ausschliesslich auf sechs non-invasive Basisparameter fokussiert. Alter (`age`), Geschlecht (`sex`), Brustschmerztyp (`cp`), Ruheblutdruck (`trestbps`), Serumcholesterin (`chol`) und Nüchternblutzucker (`fbs`). Die Auswahl jener Variablen steht in einer typischen Hausarztpraxis zur Verfügung ohne jegliche Überweisungen oder Spezialtechnik und gilt seit Jahrzehnten als Grundlage der kardiovaskulären Risikobeurteilung (D’Agostino et al., 2008).
+Es wurde ein stark reduziertes logistisches Regressionsmodell trainiert, das sich ausschliesslich auf sechs non-invasive Basisparameter fokussiert: Alter (`age`), Geschlecht (`sex`), Brustschmerztyp (`cp`), Ruheblutdruck (`trestbps`), Serumcholesterin (`chol`) und Nüchternblutzucker (`fbs`). Sämtliche sechs Parameter sind in einer typischen Hausarztpraxis ohne Überweisung oder Spezialtechnik erhebbar und gelten seit Jahrzehnten als Grundlage der kardiovaskulären Risikobeurteilung (D’Agostino et al., 2008).
 
-Der Entscheidungsschwellenwert des Modells wurde bewusst auf 15 % gesetzt, was deutlich niedriger ist als der übliche Wert von 50 %. Grund dafür ist, dass es im Screening weniger problematisch ist jemanden als fälschlicherweise krank einzuschätzen (falsch-positiv), als eine tatsächliche Krankheit zu übersehen (falsch-negativ). Das Vorgehen nennt man in der Literatur Rule-out-Strategie und entspricht den Leitlinien der ESC (Vrints et al., 2024).
+Der Entscheidungsschwellenwert des Modells wurde bewusst auf 15 % gesetzt, was deutlich niedriger ist als der übliche Wert von 50 %. Grund dafür ist, dass es im Screening weniger problematisch ist es, einen Patienten fälschlicherweise als krank einzustufen (falsch-positiv), als eine tatsächliche Erkrankung zu übersehen (falsch-negativ). Dieses Vorgehen wird in der Literatur als Rule-out-Strategie bezeichnet und entspricht den Leitlinien der ESC (Vrints et al., 2024).
 
 Die Auswertung des Modells zeigt, dass dieser Entscheid gut funktioniert. Bei einem Schwellenwert von 15 % erreicht es eine Sensitivität von `r round(matrix_screening$byClass["Sensitivity"] * 100, 1)` %, was bedeutet, dass das Modell alle erkrankten Patienten korrekt erkennt. Dies geht erwartungsgemäss mit einer niedrigen Spezifität von `r round(matrix_screening$byClass["Specificity"] * 100, 1)` % einher. Dies heisst, dass auch viele gesunde Personen fälschlich als Risikofall eingestuft werden. Im Kontext des Screening-Modells ist dies jedoch kein Widerspruch. Das Ziel ist nicht eine abschliessende Diagnose, sondern eine ESC-konforme Ersteinstufung in drei Risikopfade. Dies wurde also bewusst in Kauf genommen, da falsch-positive Befunde zwar zu weiterer Abklärung und vorübergehender psychologischer Belastung führen können, die potenziellen Konsequenzen einer übersehenen KHK jedoch schwerer wiegen. Das Modell agiert damit bewusst als konservativer, non-invasiver Filter, dessen primäre Aufgabe das sichere Ausschlussverfahren (Rule-out) ist.
 
@@ -415,11 +418,11 @@ print(make_heatmap(matrix_screening,
 
 1.  **Niedrig (\< 15 %):** Keine weiteren Tests (Rule-out): Das Modell stufte `r rowSums(triage_ergebnisse)[1]` Patienten in diese Kategorie ein. Alle Patienten waren tatsächlich herzgesund und können bei einer Untersuchung bei einer Hausarztpraxis mit gutem Gewissen und ohne weitere Abklärungen entlassen werden.
 
-2.  **Mittel (15 - 85 %):** Überweisung für nicht-invasive Bildgebung: Dies ist die grösste Gruppe mit `r rowSums(triage_ergebnisse)[2]` Patienten von denen `r triage_ergebnisse[2, 2]` tatsächlich erkrankt sind. Laut den ESC-Leitlinien wird empfohlen, dass eine Computertomographie-Angiographie (CCTA) ausgeführt wird um eine obstruktive KHK auszuschliessen (Vrints et al., 2024).
+2.  **Mittel (15 - 85 %):** Überweisung für nicht-invasive Bildgebung: Dies ist die grösste Gruppe mit `r rowSums(triage_ergebnisse)[2]` Patienten von denen `r triage_ergebnisse[2, 2]` tatsächlich erkrankt sind. Laut den ESC-Leitlinien wird empfohlen, dass eine Computertomographie-Angiographie (CCTA) ausgeführt wird, um eine obstruktive KHK auszuschliessen (Vrints et al., 2024).
 
-3.  **Hoch (\> 85 %):** Direkte Überweisung zum Herzkatheter (Rule-in): Die Gruppe enthält `r rowSums(triage_ergebnisse)[3]` Patienten von denen `r triage_ergebnisse[3, 2]` tatsächlich erkrankt sind wobei diese direkt zu einer invasiven Koronarangiographie zugeführt werden können.
+3.  **Hoch (\> 85 %):** Direkte Überweisung zum Herzkatheter (Rule-in): Die Gruppe enthält `r rowSums(triage_ergebnisse)[3]` Patienten von denen `r triage_ergebnisse[3, 2]` tatsächlich erkrankt sind wobei diese direkt zu einer invasiven Koronarangiographie weitergeleitet werden können.
 
-## Robustheitsprüfung durch Monte-Carlo-Simulation
+## Robustheitsprüfung durch Repeated Random Subsampling
 
 ```{r monte_carlo, results='markup'}
 n_sim <- 100
@@ -447,15 +450,15 @@ ergebnisse_mc <- data.frame(
   Wert = c(round(mean(sens_liste), 3), round(mean(spez_liste), 3))
 )
 
-print("--- ERGEBNISSE NACH 100 SIMULATIONEN (ESC Rule-out bei 15%) ---")
+print("--- ERGEBNISSE NACH 100 RANDOM SPLITS (ESC Rule-out bei 15%) ---")
 print(ergebnisse_mc)
 ```
 
-Um methodisch abzusichern, dass die makellose Sensitivität des zuvor evaluierten Screening-Modells nicht auf einer zufällig vorteilhaften Datenaufteilung (Lucky Split) basiert, wurde das 6-Variablen-Modell einer Monte-Carlo-Simulation mit 100 Iterationen unterzogen. Durch das Hundertfache, zufällige Neuaufteilen (Resampling) der Trainings- und Testdaten wird der Algorithmus einem rigorosen Stresstest unterzogen (Kuhn, 2019).
+Um methodisch abzusichern, dass die hohe Sensitivität des zuvor evaluierten Screening-Modells nicht auf einer zufällig vorteilhaften Datenaufteilung (Lucky Split) basiert, wurde das 6-Variablen-Modell einer Robustheitsprüfung mittels 100-facher zufälliger Datenaufteilung (Repeated Random Subsampling) unterzogen. Durch das Hundertfache, zufällige Neuaufteilen (Resampling) der Trainings- und Testdaten wird der Algorithmus einer systematischen Robustheitsprüfung unterzogen (Kuhn, 2019).
 
 Die Evaluation am konservativen ESC-Rule-out-Schwellenwert (\< 15 % KHK-Wahrscheinlichkeit) belegt die hohe prädiktive Stabilität des entwickelten Gatekeeper-Tools: Über 100 völlig ungesehene Testdatensätze hinweg konvergiert die durchschnittliche Sensitivität bei hervorragenden `r round(mean(sens_liste) * 100, 1)` %. Im Mittel werden dabei weniger als 2.5 erkrankte Patienten pro Testset nicht erkannt. Das Modell beweist somit seine konstante, robuste Fähigkeit, lebensbedrohliche KHK-Fälle zuverlässig zu identifizieren und das Risiko falsch-negativer Triage-Entscheidungen zu minimieren (Altman & Bland, 1994).
 
-Parallel dazu stabilisiert sich die durchschnittliche Spezifität bei `r round(mean(spez_liste) * 100, 1)` %. Das bedeutet, dass das Modell über alle Simulationsdurchläufe hinweg im Mittel über ein Drittel der herzgesunden Personen sicher und korrekt aus dem klinischen Pfad ausschliesst. Diese Werte bestätigen den angestrebten medizinischen und gesundheitsökonomischen Nutzen vollumfänglich: Das Modell agiert als sicherer, non-invasiver Filter in der hausärztlichen Primärversorgung.
+Parallel dazu stabilisiert sich die durchschnittliche Spezifität bei `r round(mean(spez_liste) * 100, 1)` %. Das bedeutet, dass das Modell über alle Simulationsdurchläufe hinweg im Mittel über ein Drittel der herzgesunden Personen sicher und korrekt aus dem klinischen Pfad ausschliesst. Diese Werte stützen die Eignung des Modells als non-invasiver Vorfilter in der Primärversorgung.
 
 # Interaktive Diagnose-Applikation (R-Shiny)
 
@@ -523,17 +526,23 @@ shinyApp(ui, server)
 
 ## Zusammenfassung der Ergebnisse
 
-Die vorliegende Arbeit demonstriert erfolgreich, wie maschinelle Lernverfahren und statistische Modellierung genutzt werden können, um die Diagnostik der koronaren Herzkrankheit in der medizinischen Primärversorgung zu optimieren. Ausgehend vom historischen Cleveland-Datensatz wurde zunächst ein prädiktives logistisches Regressionsmodell entwickelt. Durch eine AIC-Optimierung konnte das Modell von 13 auf 9 Prädiktoren reduziert werden. Das resultierende Modell überzeugte mit exzellenter Diskriminierungsfähigkeit (AUC = `r round(auc(roc_kurve), 3)`) und erwies sich in der Kreuzvalidierung (Accuracy = `r round(cv_logreg$results$Accuracy * 100, 1)` %) gegenüber komplexeren Black-Box-Verfahren wie Random Forest als ebenbürtig und aufgrund seiner hohen Interpretierbarkeit als überlegen.
+Die vorliegende Arbeit zeigt, wie maschinelle Lernverfahren und statistische Modellierung genutzt werden können, um die Diagnostik der koronaren Herzkrankheit in der medizinischen Primärversorgung zu optimieren. Ausgehend vom historischen Cleveland-Datensatz wurde zunächst ein prädiktives logistisches Regressionsmodell entwickelt. Durch eine AIC-Optimierung konnte das Modell von 13 auf 9 Prädiktoren reduziert werden. Das resultierende Modell zeigte eine hohe Diskriminierungsfähigkeit (AUC = `r round(auc(roc_kurve), 3)`) und erwies sich in der Kreuzvalidierung (Accuracy = `r round(cv_logreg$results$Accuracy * 100, 1)` %) gegenüber komplexeren Black-Box-Verfahren wie Random Forest als ebenbürtig und aufgrund seiner hohen Interpretierbarkeit als überlegen.
 
-Der zentrale Mehrwert liegt im Transfer in die klinische Praxis. Da das 9-Variablen-Modell invasive Parameter voraussetzte, wurde ein reduziertes Gatekeeper-Modell aus lediglich sechs non-invasiven Basisparametern für die Hausarztpraxis extrahiert. Durch eine gezielte Schwellenwert-Rekalibrierung und die Integration der ESC-Triage-Leitlinien entstand ein Screening-Tool, das eine Sensitivität von `r round(matrix_screening$byClass["Sensitivity"] * 100, 1)` % (im finalen Testset) bzw. `r round(mean(sens_liste) * 100, 1)` % (in der Monte-Carlo-Simulation) erreichte. Die Überführung in eine R-Shiny Applikation belegt die technische Machbarkeit eines solchen digitalen Assistenzsystems.
+Der zentrale Mehrwert liegt im Transfer in die klinische Praxis. Da das 9-Variablen-Modell invasive Parameter voraussetzte, wurde ein reduziertes Gatekeeper-Modell aus lediglich sechs non-invasiven Basisparametern für die Hausarztpraxis extrahiert. Durch eine gezielte Schwellenwert-Rekalibrierung und die Integration der ESC-Triage-Leitlinien entstand ein Screening-Tool, das eine Sensitivität von `r round(matrix_screening$byClass["Sensitivity"] * 100, 1)` % (im finalen Testset) bzw. `r round(mean(sens_liste) * 100, 1)` % (im Repeated Random Subsampling) erreichte. Die Überführung in eine R-Shiny Applikation belegt die technische Machbarkeit eines solchen digitalen Assistenzsystems.
 
 ## Limitierungen der Arbeit
 
-Trotz der vielversprechenden Resultate unterliegt die Analyse gewissen Limitierungen. Erstens entstammt der Datensatz dem Jahr 1989. Die medizinische Demografie sowie Ernährungs- und Lebensgewohnheiten haben sich seither verändert, was die direkte Übertragbarkeit der Wahrscheinlichkeitswerte auf heutige Patientenkollektive einschränkt.
+Trotz der vielversprechenden Resultate unterliegt die Analyse gewissen Limitierungen.
 
-Zweitens ist die finale Stichprobengrösse von n = `r nrow(df_modell)` für moderne Machine-Learning-Verhältnisse gering.
+Die gewichtigste Einschränkung betrifft den Selektionsbias (Spectrum Bias) des Datensatzes. Der Cleveland-Datensatz enthält ausschliesslich Patienten, die bereits zur invasiven Koronarangiografie überwiesen wurden – eine hochselektierte Population mit einer KHK-Prävalenz von rund 46 %. In der hausärztlichen Primärversorgung, der eigentlichen Zielpopulation des Screening-Tools, liegt die Prävalenz bei Patienten mit unklaren Brustschmerzen typischerweise bei 10–30 %. Sämtliche berichteten Kennzahlen – insbesondere der positive und negative prädiktive Wert – sind daher nicht direkt auf die Zielpopulation übertragbar. Eine externe Validierung an einem primärmedizinischen Datensatz wäre für den klinischen Einsatz zwingend erforderlich.
 
-Drittens beschränkt sich das Modell auf einfache Laborparameter. Moderne, spezifische Blutbiomarker wie das LDL-Cholesterin, Entzündungsparameter (hs-CRP) oder hochsensitives Troponin fehlen in den Daten, würden die Trennschärfe des Modells in der Praxis jedoch zweifellos weiter erhöhen.
+Zweitens entstammt der Datensatz dem Jahr 1989. Die medizinische Demografie sowie Ernährungs- und Lebensgewohnheiten haben sich seither verändert, was die direkte Übertragbarkeit der Wahrscheinlichkeitswerte auf heutige Patientenkollektive einschränkt.
+
+Drittens ist die finale Stichprobengrösse von n = `r nrow(df_modell)` für moderne Machine-Learning-Verhältnisse gering.
+
+Viertens beschränkt sich das Modell auf einfache Laborparameter. Moderne, spezifische Blutbiomarker wie das LDL-Cholesterin, Entzündungsparameter (hs-CRP) oder hochsensitives Troponin fehlen in den Daten, würden die Trennschärfe des Modells in der Praxis jedoch zweifellos weiter erhöhen.
+
+Schliesslich wurde keine formale Kalibrierungsprüfung (z. B. Hosmer-Lemeshow-Test oder Kalibrierungsplot) durchgeführt. Ohne den Nachweis, dass die vom Modell geschätzten Wahrscheinlichkeiten den tatsächlichen Erkrankungsraten entsprechen, ist die Interpretation der Modellausgabe als Pre-Test Probability im strengen klinischen Sinne nur eingeschränkt zulässig.
 
 ## Ausblick und zukünftige Entwicklungen
 
