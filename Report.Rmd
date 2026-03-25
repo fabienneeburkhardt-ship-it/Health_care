@@ -219,14 +219,14 @@ corrplot(korrelations_matrix, method = "color", type = "upper",
 
 # Statistische Modellierung
 
-```{r datensplit, include=FALSE}
+```{r datensplit, include=TRUE}
 set.seed(42)
 train_index <- sample(seq_len(nrow(df_modell)), size = 0.7 * nrow(df_modell))
 train_data  <- df_modell[train_index, ]
 test_data   <- df_modell[-train_index, ]
 ```
 
-```{r modelle_trainieren, include=FALSE}
+```{r modelle_trainieren, include=TRUE}
 # vorab für inline-R
 modell_voll      <- glm(target ~ ., data = train_data, family = "binomial")
 modell_optimiert <- step(modell_voll, direction = "backward", trace = 0)
@@ -266,7 +266,7 @@ summary(modell_optimiert)
 
 **Modelloptimierung durch Rückwärts-Selektion**
 
-Zur Reduktion der Modellkomplexität und zur Vermeidung von Overfitting wurde eine automatische Rückwärts-Selektion (Backward Stepwise Selection) durchgeführt. Als Optimierungskriterium diente das Akaike-Informationskriterium (AIC). Der Algorithmus eliminierte iterativ in vier Schritten die Variablen Alter (`age`), ST-Senkung (`oldpeak`), Serumcholesterin (`chol`) und Ruhe-EKG (`restecg`), da ihr jeweiliger Ausschluss den globalen AIC-Wert sukzessive verbesserte.
+Zur Reduktion der Modellkomplexität und zur Vermeidung von Overfitting wurde eine automatische Rückwärts-Selektion (Backward Stepwise Selection) durchgeführt. Als Optimierungskriterium diente das Akaike-Informationskriterium (AIC) (Cavanaugh & Neath, 2025). Der Algorithmus eliminierte iterativ in vier Schritten die Variablen Alter (`age`), ST-Senkung (`oldpeak`), Serumcholesterin (`chol`) und Ruhe-EKG (`restecg`), da ihr jeweiliger Ausschluss den globalen AIC-Wert sukzessive verbesserte.
 
 **Evaluation des reduzierten Modells**
 
@@ -300,7 +300,7 @@ print(make_heatmap(konfusionsmatrix,
 ```
 
 ### ROC-Kurve
-```{r eval_roc, results='markup'}
+```{r eval_roc, echo=TRUE, results='markup'}
 # wahrscheinlichkeiten aus eval_50_heatmap
 roc_kurve <- roc(test_data$target, wahrscheinlichkeiten, levels = c("0", "1"), direction="<", quiet=TRUE)
 plot(roc_kurve, main = "ROC-Kurve für das optimierte KHK-Modell", col = "blue", lwd = 2)
@@ -317,7 +317,7 @@ Die Receiver Operating Characteristic (ROC)-Kurve visualisiert den Kompromiss (T
 
 ## Klinische Rekalibrierung (20%)
 
-```{r eval_20pct, results='markup'}
+```{r eval_20pct, echo=TRUE, results='markup'}
 # Cut-off 20%
 neuer_cutoff <- 0.20
 vorhersagen_sensibel <- ifelse(wahrscheinlichkeiten > neuer_cutoff, "1", "0")
@@ -338,7 +338,7 @@ Dieser essenzielle Sicherheitsgewinn geht mathematisch zwingend zulasten der Spe
 
 # Robustheitsprüfung und Modellvergleich
 
-```{r robustheit_berechnen, include=FALSE}
+```{r robustheit_berechnen, include=TRUE}
 train_kontrolle <- trainControl(method = "cv", number = 10)
 set.seed(42)
 cv_logreg <- train(target ~ sex + cp + trestbps + fbs + thalach + exang + slope + ca + thal,
@@ -358,7 +358,7 @@ Die Evaluation am fixen Testset liefert eine erste Schätzung der Modellgüte. U
 **Machine-Learning-Vergleich: Logistische Regression vs. Random Forest** Abschliessend wurde das klassische statistische Verfahren dem modernen Ensemble-Lernalgorithmus Random Forest gegenübergestellt. Unter identischen Resampling-Bedingungen (10-Fold CV, identisches 9-Variablen-Set) erzielt der Random Forest bei optimalem Hyperparameter eine Accuracy von `r round(cv_rf$results[which.max(cv_rf$results$Accuracy), "Accuracy"] * 100, 1)` % und einen Kappa-Wert von `r round(cv_rf$results[which.max(cv_rf$results$Accuracy), "Kappa"], 2)`. Der baumbasierte Algorithmus erbringt folglich keine nennenswerte Leistungssteigerung gegenüber dem linearen Verfahren.
 
 
-```{r robustheit_cv, results='markup'}
+```{r robustheit_cv, echo=TRUE, results='markup'}
 print("--- Logistische Regression (10-Fold CV) ---")
 print(cv_logreg$results)
 print("--- Random Forest (10-Fold CV) ---")
@@ -375,7 +375,7 @@ Die ESC-Leitlinien für chronische Koronarsyndrome (2024) empfehlen ein stufenwe
 
 ## Entwicklung des Gatekeeper-Modells
 
-```{r screening_berechnen, include=FALSE}
+```{r screening_berechnen, include=TRUE}
 df_screening <- df_modell %>% select(target, age, sex, cp, trestbps, chol, fbs)
 # gleicher Index, da df_screening nur Spalten-Subset von df_modell
 train_data_scr <- df_screening[train_index, ]
@@ -408,7 +408,7 @@ Um die Vorhersagewahrscheinlichkeiten direkt in die klinische Praxis zu überset
 2.	**Mittel (15–85 %)**: Nicht-invasive Bildgebung
 3.	**Hoch (> 85 %)**: Direkte invasive Abklärung (Rule-in)
 
-```{r screening_modell, results='markup'}
+```{r screening_modell, echo=TRUE, results='markup'}
 print("Performance des 6-Variablen-Screening-Modells (Cut-off 15%):")
 print(matrix_screening$byClass[c("Sensitivity", "Specificity")])
 print("ESC-Triage-System angewendet auf den Testdatensatz:")
@@ -427,7 +427,7 @@ print(make_heatmap(matrix_screening,
 
 ## Robustheitsprüfung durch Repeated Random Subsampling
 
-```{r monte_carlo, results='markup'}
+```{r repeated random subsampling, results='markup'}
 n_sim <- 100
 sens_liste <- numeric(n_sim)
 spez_liste <- numeric(n_sim)
@@ -565,6 +565,8 @@ Bei der Erstellung dieser Arbeit wurden generative KI-Tools, darunter Claude (An
 Altman, D. G., & Bland, J. M. (1994). Statistics Notes: Diagnostic tests 1: sensitivity and specificity. BMJ, 308(6943), 1552. https://doi.org/10.1136/bmj.308.6943.1552
 
 Andras Janosi, W. S. (1989). Heart Disease [Dataset]. UCI Machine Learning Repository. https://doi.org/10.24432/C52P4X
+
+Cavanaugh, J. E., & Neath, A. A. (2025). Akaike Information Criterion, The: Background, Derivation, Properties, and Refinements. In International Encyclopedia of Statistical Science (S. 35–41). Springer, Berlin, Heidelberg. https://doi.org/10.1007/978-3-662-69359-9_685
 
 D’Agostino, R. B., Vasan, R. S., Pencina, M. J., Wolf, P. A., Cobain, M., Massaro, J. M., & Kannel, W. B. (2008). General Cardiovascular Risk Profile for Use in Primary Care. Circulation, 117(6). https://www.ahajournals.org/doi/10.1161/CIRCULATIONAHA.107.699579
 
