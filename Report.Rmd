@@ -52,7 +52,7 @@ make_heatmap <- function(cm, title, subtitle, threshold = 20) {
 
 # Einleitung & Forschungsfrage
 
-Herz-Kreislauf-Erkrankungen, insbesondere ischämische Herzkrankheiten wie die koronare Herzkrankheit (KHK), stellen laut der Weltgesundheitsorganisation (WHO) weltweit die führende Todesursache dar. Die KHK, in aktuellen Leitlinien oft unter dem Begriff der chronischen Koronarsyndrome (CCS) zusammengefasst, ist durch eine fortschreitende Arteriosklerose der Herzkranzgefässe gekennzeichnet. Diese Verengung führt zu einer verminderten Sauerstoffversorgung des Herzmuskels, was sich klinisch häufig als Angina Pectoris äussert und unbehandelt in einem lebensbedrohlichen Myokardinfarkt resultieren kann. Eine frühzeitige und präzise Diagnostik ist daher von entscheidender prognostischer Bedeutung.
+Gemäss der Weltgesundheitsorganisation (WHO) stellen ischämische Herzkrankheiten die weltweit häufigste Todesursache dar. Die zugrundeliegende Ursache ist dabei meist die koronare Herzkrankheit (KHK), bei der eine Verengung der Herzkranzgefässe zu einer Minderdurchblutung (Ischämie) des Herzmuskels führt (World Health Organisation, 2021). Prädiktive Machine-Learning-Modelle bieten ein enormes Potenzial zur Früherkennung von Erkrankungen (Nagavelli et al., 2022). 
 
 In der klinischen Praxis stellt die Erstdiagnostik eine erhebliche Herausforderung dar. Die definitive Bestätigung oder der Ausschluss einer KHK erfordert oft ressourcenintensive, teure oder invasive Verfahren, wie beispielsweise die Myokard-Szintigraphie, das Stress-MRT oder die invasive Koronarangiographie (Herzkatheter). Da diese Verfahren nicht flächendeckend als Erstlinientest eingesetzt werden können, kommt der Primärversorgung (Hausarztpraxis) eine essenzielle Triage- und Gatekeeper-Funktion zu. Es bedarf effizienter Entscheidungshilfen, um Patienten mit unklaren Brustschmerzen schnell und sicher anhand leicht erhebbarer Basisparameter in entsprechende Risikogruppen einzuteilen.
 
@@ -62,7 +62,7 @@ Um diese Frage zu beantworten, verfolgt die vorliegende Arbeit ein zweistufiges 
 
 # Datengrundlage & Datenaufbereitung
 
-Für die vorliegende Analyse wurde der "Cleveland Heart Disease"-Datensatz aus dem UCI Machine Learning Repository herangezogen. Ursprünglich umfasste der Datensatz n = 303 Beobachtungen klinischer Patientendaten. Im Rahmen eines Preprocessings wurden die Daten zunächst auf Inkonsistenzen und fehlende Werte (im Originaldatensatz teilweise als "?" kodiert) geprüft. Um Verzerrungen in den späteren Machine-Learning-Modellen zu vermeiden, wurden sechs unvollständige Fälle vollständig aus dem Datensatz entfernt (Listwise Deletion). Die finale, bereinigte Stichprobe für die Modellierung beläuft sich somit auf n = 297 Patienten.
+Für die vorliegende Analyse wurde der "Cleveland Heart Disease"-Datensatz aus dem UCI Machine Learning Repository herangezogen. Ursprünglich umfasste der Datensatz n = 303 Beobachtungen klinischer Patientendaten (Andras Janosi, 1989). Im Rahmen eines Preprocessings wurden die Daten zunächst auf Inkonsistenzen und fehlende Werte (im Originaldatensatz teilweise als "?" kodiert) geprüft. Um Verzerrungen in den späteren Machine-Learning-Modellen zu vermeiden, wurden sechs unvollständige Fälle vollständig aus dem Datensatz entfernt (Listwise Deletion). Die finale, bereinigte Stichprobe für die Modellierung beläuft sich somit auf n = 297 Patienten.
 
 Ein zentraler methodischer Schritt der Datenaufbereitung war die Transformation der abhängigen Zielvariable `num`. Im Originaldatensatz gibt diese den angiografischen Schweregrad der koronaren Herzkrankheit auf einer Skala von 0 (keine Gefässverengung) bis 4 (schwere Mehrgefässerkrankung) an. Für die Zwecke dieser Arbeit wurde diese multikategoriale Variable in eine binäre Klassifikation überführt: Der Wert 0 wurde als "gesund" (Klasse 0) beibehalten, während sämtliche Ausprägungen von 1 bis 4 unter der Klasse "krank" (Klasse 1) zusammengefasst wurden.
 
@@ -557,6 +557,23 @@ Darüber hinaus eröffnet die Verbreitung von Smartwatches neue diagnostische Pe
 
 ## Benutzung von generativer künstlicher Intelligenz (KI)
 
-Bei der Erstellung dieser Arbeit wurden generative KI-Tools, darunter Claude (Anthropic), Gemini und ChatGPT als unterstützende Hilfsmittel eingesetzt. Die KI-Assistenz umfang folgende Bereiche: sprachliche Formulierung und Überarbeitung von Textabschnitten, strukturelles Feedback zum Aufbau des Berichts, Verbesserungen des Codes sowie die Vorbereitung von Präsentationsinhalten.
+Bei der Erstellung dieser Arbeit wurden generative KI-Tools, darunter Claude (Anthropic), Gemini und ChatGPT als unterstützende Hilfsmittel eingesetzt. Die KI-Assistenz umfang folgende Bereiche: sprachliche Formulierung und Überarbeitung von Textabschnitten, strukturelles Feedback zum Aufbau des Berichts, Verbesserungen des Codes sowie die Vorbereitung von Präsentationsinhalten. Wir haben alle KI-generierten Ergebnisse geprüft, bearbeitet und validiert und tragen die volle Verantwortung für den endgültigen Inhalt. 
 
-Sämtliche statistischen Analysen, Modellierungsentscheide und inhaltlichen Interpretationen wurden von den Autorinnen und Autoren in R durchgeführt und überprüft. Der Einsatz von KI-Tools ersetzte zu keinem Zeitpunkt das eigenständige wissenschaftliche Urteilsvermögen.
+
+## Literaturverzeichnis
+
+Altman, D. G., & Bland, J. M. (1994). Statistics Notes: Diagnostic tests 1: sensitivity and specificity. BMJ, 308(6943), 1552. https://doi.org/10.1136/bmj.308.6943.1552
+
+Andras Janosi, W. S. (1989). Heart Disease [Dataset]. UCI Machine Learning Repository. https://doi.org/10.24432/C52P4X
+
+D’Agostino, R. B., Vasan, R. S., Pencina, M. J., Wolf, P. A., Cobain, M., Massaro, J. M., & Kannel, W. B. (2008). General Cardiovascular Risk Profile for Use in Primary Care. Circulation, 117(6). https://www.ahajournals.org/doi/10.1161/CIRCULATIONAHA.107.699579
+
+Kuhn, M. (2019). 5 Model Training and Tuning | The caret Package. https://topepo.github.io/caret/model-training-and-tuning.html
+
+Nagavelli, U., Samanta, D., & Chakraborty, P. (2022). Machine Learning Technology-Based Heart Disease Detection Models. Journal of Healthcare Engineering, 2022(1), 7351061. https://doi.org/10.1155/2022/7351061
+
+Vrints, C., Andreotti, F., Koskinas, K. C., Rossello, X., Adamo, M., Ainslie, J., Banning, A. P., Budaj, A., Buechel, R. R., Chiariello, G. A., Chieffo, A., Christodorescu, R. M., Deaton, C., Doenst, T., Jones, H. W., Kunadian, V., Mehilli, J., Milojevic, M., Piek, J. J., … ESC Scientific Document Group. (2024). 2024 ESC Guidelines for the management of chronic coronary syndromes: Developed by the task force for the management of chronic coronary syndromes of the European Society of Cardiology (ESC) Endorsed by the European Association for Cardio-Thoracic Surgery (EACTS). European Heart Journal, 45(36), 3415–3537. https://doi.org/10.1093/eurheartj/ehae177
+
+World Health Organisation. (2021). The top 10 causes of death. https://www.who.int/news-room/fact-
+
+
