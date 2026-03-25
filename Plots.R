@@ -38,7 +38,7 @@ ggsave("Heatmap_Gatekeeper_Transparent.png", plot = heatmap_scr,
 
 
 # ==============================================================================
-# 2. HISTOGRAMM (Monte-Carlo) MIT TRANSPARENTEM HINTERGRUND EXPORTIEREN
+# 2. HISTOGRAMM (Repeated Random Subsampling) MIT TRANSPARENTEM HINTERGRUND EXPORTIEREN
 # ==============================================================================
 
 # Daten vorbereiten
@@ -50,18 +50,18 @@ plot_mc <- ggplot(mc_daten, aes(x = Sensitivitaet)) +
   geom_vline(aes(xintercept = mean(Sensitivitaet)), color = "red", linetype = "dashed", linewidth = 1.5) +
   theme_minimal() +
   labs(title = "Stabilität der Modell-Sensitivität",
-       subtitle = "Verteilung über 100 Monte-Carlo-Durchläufe",
+       subtitle = "Verteilung über 100 Repeated-Random-Subsampling-Durchläufe",
        x = "Sensitivität in %", y = "Häufigkeit") +
   theme(axis.text = element_text(size = 12),
         axis.title = element_text(size = 14, face = "bold"),
         plot.title = element_text(size = 16, face = "bold"),
-        
+
         # MAGIE FÜR TRANSPARENZ:
         plot.background = element_rect(fill = "transparent", color = NA),
         panel.background = element_rect(fill = "transparent", color = NA))
 
 # Speichern als High-Res PNG
-ggsave("Histogramm_MonteCarlo_Transparent.png", plot = plot_mc, 
+ggsave("Histogramm_RepeatedRandomSubsampling_Transparent.png", plot = plot_mc,
        width = 7, height = 5, dpi = 300, bg = "transparent")
 
 print("Erfolg! Beide Plots wurden mit transparentem Hintergrund in deinem Projektordner gespeichert.")

@@ -1958,8 +1958,8 @@ und der ST-Steigung (<code>slope</code>, r = 0.58). Die sechs finalen
 Hausarzt-Parameter weisen untereinander lediglich marginale
 Korrelationen auf (maximal Alter und Blutdruck mit r = 0.29). Da kein
 Variablenpaar den Schwellenwert für Multikollinearität (r &gt; 0.8)
-überschreitet, ist das Risiko verzerrter Regressionskoeffizienten
-auszuschliessen. Eine robuste multivariate Modellierung ist somit
+überschreitet, ist das Risiko relevanter Multikollinearität als gering
+einzuschätzen. Eine robuste multivariate Modellierung ist somit
 methodisch legitimiert.</p>
 </div>
 </div>
@@ -2016,7 +2016,7 @@ verengten Gefässe (<code>ca</code>, <span class="math inline">\(p &lt;
 abnormale Szintigraphie (<code>thal</code>, <span class="math inline">\(p = 0.003\)</span>), Brustschmerztyp
 (<code>cp</code>, <span class="math inline">\(p = 0.004\)</span>) sowie
 eine niedrigere maximale Herzfrequenz (<code>thalach</code>, <span class="math inline">\(p = 0.020\)</span>).</p>
-<p><strong>Multikollinearität</strong></p>
+<p><strong>Redundanz im multivariaten Kontext</strong></p>
 <p>Auffällig ist, dass Variablen wie Alter (<code>age</code>, <span class="math inline">\(p = 0.825\)</span>) oder Serumcholesterin
 (<code>chol</code>, <span class="math inline">\(p = 0.296\)</span>) im
 multivariaten Kontext ihre in der explorativen Analyse gezeigte
@@ -2218,7 +2218,7 @@ Train-Test-Split) auszuschliessen, wurde das reduzierte
 9-Variablen-Modell einer 10-fachen Kreuzvalidierung (10-Fold
 Cross-Validation) unterzogen. Über alle zehn Folds hinweg erzielt die
 logistische Regression eine durchschnittliche Gesamtgenauigkeit
-(Accuracy) von 84.2 % sowie einen soliden Cohens-Kappa-Wert von 0.68.
+(Accuracy) von 84.5 % sowie einen soliden Cohens-Kappa-Wert von 0.69.
 Dies bestätigt die hohe Stabilität und Generalisierbarkeit des
 Regressionsmodells auf ungesehene Patientendaten.</p>
 <p><strong>Methodischer Hinweis:</strong> Die Kreuzvalidierung wurde auf
@@ -2234,13 +2234,13 @@ Verfahren dem modernen Ensemble-Lernalgorithmus Random Forest
 gegenübergestellt. Unter identischen Resampling-Bedingungen (10-Fold CV,
 identisches 9-Variablen-Set) erzielt der Random Forest bei optimalem
 Hyperparameter eine Accuracy von 81.5 % und einen Kappa-Wert von 0.63.
-Der baumbasierte Algorithmus erbringt folglich keine signifikante
+Der baumbasierte Algorithmus erbringt folglich keine nennenswerte
 Leistungssteigerung gegenüber dem linearen Verfahren.</p>
 <pre class="r"><code>print(&quot;--- Logistische Regression (10-Fold CV) ---&quot;)</code></pre>
 <pre><code>## [1] &quot;--- Logistische Regression (10-Fold CV) ---&quot;</code></pre>
 <pre class="r"><code>print(cv_logreg$results)</code></pre>
-<pre><code>##   parameter  Accuracy     Kappa AccuracySD  KappaSD
-## 1      none 0.8418391 0.6809017 0.05427971 0.108043</code></pre>
+<pre><code>##   parameter  Accuracy     Kappa AccuracySD   KappaSD
+## 1      none 0.8452874 0.6867678 0.08488506 0.1722879</code></pre>
 <pre class="r"><code>print(&quot;--- Random Forest (10-Fold CV) ---&quot;)</code></pre>
 <pre><code>## [1] &quot;--- Random Forest (10-Fold CV) ---&quot;</code></pre>
 <pre class="r"><code>print(cv_rf$results)</code></pre>
@@ -2507,7 +2507,7 @@ zunächst ein prädiktives logistisches Regressionsmodell entwickelt.
 Durch eine AIC-Optimierung konnte das Modell von 13 auf 9 Prädiktoren
 reduziert werden. Das resultierende Modell zeigte eine hohe
 Diskriminierungsfähigkeit (AUC = 0.884) und erwies sich in der
-Kreuzvalidierung (Accuracy = 84.2 %) gegenüber komplexeren
+Kreuzvalidierung (Accuracy = 84.5 %) gegenüber komplexeren
 Black-Box-Verfahren wie Random Forest als ebenbürtig und aufgrund seiner
 hohen Interpretierbarkeit als überlegen.</p>
 <p>Der zentrale Mehrwert liegt im Transfer in die klinische Praxis. Da
@@ -2543,7 +2543,26 @@ verändert, was die direkte Übertragbarkeit der Wahrscheinlichkeitswerte
 auf heutige Patientenkollektive einschränkt.</p>
 <p>Drittens ist die finale Stichprobengrösse von n = 297 für moderne
 Machine-Learning-Verhältnisse gering.</p>
-<p>Viertens beschränkt sich das Modell auf einfache Laborparameter.
+<p>Viertens wurden die mehrstufigen kategorialen Variablen
+Brustschmerztyp (<code>cp</code>), Thallium-Szintigraphie
+(<code>thal</code>), ST-Steigung (<code>slope</code>) und Ruhe-EKG
+(<code>restecg</code>) im vorliegenden Modell als metrisch kodiert
+behandelt. Dies impliziert eine lineare Beziehung zwischen
+Kodierungswert und Log-Odds, die bei nominalen Variablen nicht zwingend
+gegeben ist. Eine explorative Vergleichsanalyse mit faktorisierten
+Variablen ergab, dass insbesondere bei <code>cp</code> kein linearer
+Trend vorliegt – lediglich die asymptomatische Kategorie (cp = 4)
+unterscheidet sich signifikant von den übrigen Ausprägungen. Im vollen
+Modell war der Einfluss der Faktorisierung auf die
+Diskriminierungsfähigkeit gering (AUC-Differenz &lt; 0.01). Im
+6-Variablen-Screening-Modell, in dem nur <code>cp</code> betroffen ist,
+zeigte die faktorisierte Variante eine leicht niedrigere Sensitivität
+bei gleichzeitig höherer Spezifität. Da die Differenzen bei der
+vorliegenden Stichprobengrösse im Bereich des Stichprobenzufalls liegen,
+wurde die numerische Kodierung beibehalten. Für eine Weiterentwicklung
+des Modells wäre eine konsequente Faktorisierung dennoch
+empfehlenswert.</p>
+<p>Fünftens beschränkt sich das Modell auf einfache Laborparameter.
 Moderne, spezifische Blutbiomarker wie das LDL-Cholesterin,
 Entzündungsparameter (hs-CRP) oder hochsensitives Troponin fehlen in den
 Daten, würden die Trennschärfe des Modells in der Praxis jedoch
