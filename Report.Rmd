@@ -236,11 +236,11 @@ Um ein belastbares prädiktives Modell zu erstellen, wurde der Datensatz zunäch
 
 Die Modellentwicklung erfolgte in drei aufeinander aufbauenden Schritten. Im ersten Schritt wurde ein Basismodell mit allen 13 Prädiktoren geschätzt. Dies lieferte einen initialen AIC-Wert von `r round(modell_voll$aic, 1)`. Da zu komplexe Modelle anfällig für Overfitting sind, wurde das Basismodell in einem zweiten Schritt durch eine systematische Rückwärts-Selektion (`step()`) optimiert. Dadurch wurden iterativ jene Variablen entfernt, deren Ausschluss den AIC-Wert verbesserte. Das resultierende Modell umfasst lediglich noch neun Prädiktoren. Durch diese Reduktion sank der AIC-Wert deutlich auf `r round(modell_optimiert$aic, 1)`.
 
-Im dritten Schritt wurde ein reduziertes Modell entwickelt, das ausschliesslich sechs nicht-invasive Parameter erfasst. Als non-invasiv gelten dabei Messungen, die ohne körperlichen Eingriff, Kontrastmittel oder apparative Spezialdiagnostik durchführbar sind – konkret Werte, die in einer Hausarztpraxis routinemässig erhoben werden. Die Variablenauswahl folgt primär einer klinisch-praktischen Logik mit Fokus auf niedrigschwellige Einsetzbarkeit. 
+Im dritten Schritt wurde ein reduziertes Modell entwickelt, das ausschliesslich sechs nicht-invasive Parameter erfasst. Als non-invasiv gelten dabei Messungen, die ohne körperlichen Eingriff, Kontrastmittel oder apparative Spezialdiagnostik durchführbar sind. Konkret handelt es sich um Werte, die in einer Hausarztpraxis routinemässig erhoben werden. Die Variablenauswahl folgt primär einer klinisch-praktischen Logik mit Fokus auf eine einfache Einsetzbarkeit. 
 
 ## Basismodell (13 Variablen)
 
-```{r model_basis}
+```{r model_basis, echo = TRUE}
 summary(modell_voll)
 ```
 
