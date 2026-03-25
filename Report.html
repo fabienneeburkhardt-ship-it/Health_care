@@ -1597,17 +1597,14 @@ Fabienne Burkhardt</h4>
 <div id="einleitung-forschungsfrage" class="section level1" number="1">
 <h1><span class="header-section-number">1</span> Einleitung &amp;
 Forschungsfrage</h1>
-<p>Herz-Kreislauf-Erkrankungen, insbesondere ischämische Herzkrankheiten
-wie die koronare Herzkrankheit (KHK), stellen laut der
-Weltgesundheitsorganisation (WHO) weltweit die führende Todesursache
-dar. Die KHK, in aktuellen Leitlinien oft unter dem Begriff der
-chronischen Koronarsyndrome (CCS) zusammengefasst, ist durch eine
-fortschreitende Arteriosklerose der Herzkranzgefässe gekennzeichnet.
-Diese Verengung führt zu einer verminderten Sauerstoffversorgung des
-Herzmuskels, was sich klinisch häufig als Angina Pectoris äussert und
-unbehandelt in einem lebensbedrohlichen Myokardinfarkt resultieren kann.
-Eine frühzeitige und präzise Diagnostik ist daher von entscheidender
-prognostischer Bedeutung.</p>
+<p>Gemäss der Weltgesundheitsorganisation (WHO) stellen ischämische
+Herzkrankheiten die weltweit häufigste Todesursache dar. Die
+zugrundeliegende Ursache ist dabei meist die koronare Herzkrankheit
+(KHK), bei der eine Verengung der Herzkranzgefässe zu einer
+Minderdurchblutung (Ischämie) des Herzmuskels führt (World Health
+Organisation, 2021). Prädiktive Machine-Learning-Modelle bieten ein
+enormes Potenzial zur Früherkennung von Erkrankungen (Nagavelli et al.,
+2022).</p>
 <p>In der klinischen Praxis stellt die Erstdiagnostik eine erhebliche
 Herausforderung dar. Die definitive Bestätigung oder der Ausschluss
 einer KHK erfordert oft ressourcenintensive, teure oder invasive
@@ -1642,13 +1639,13 @@ Datenaufbereitung</h1>
 <p>Für die vorliegende Analyse wurde der “Cleveland Heart
 Disease”-Datensatz aus dem UCI Machine Learning Repository herangezogen.
 Ursprünglich umfasste der Datensatz n = 303 Beobachtungen klinischer
-Patientendaten. Im Rahmen eines Preprocessings wurden die Daten zunächst
-auf Inkonsistenzen und fehlende Werte (im Originaldatensatz teilweise
-als “?” kodiert) geprüft. Um Verzerrungen in den späteren
-Machine-Learning-Modellen zu vermeiden, wurden sechs unvollständige
-Fälle vollständig aus dem Datensatz entfernt (Listwise Deletion). Die
-finale, bereinigte Stichprobe für die Modellierung beläuft sich somit
-auf n = 297 Patienten.</p>
+Patientendaten (Andras Janosi, 1989). Im Rahmen eines Preprocessings
+wurden die Daten zunächst auf Inkonsistenzen und fehlende Werte (im
+Originaldatensatz teilweise als “?” kodiert) geprüft. Um Verzerrungen in
+den späteren Machine-Learning-Modellen zu vermeiden, wurden sechs
+unvollständige Fälle vollständig aus dem Datensatz entfernt (Listwise
+Deletion). Die finale, bereinigte Stichprobe für die Modellierung
+beläuft sich somit auf n = 297 Patienten.</p>
 <p>Ein zentraler methodischer Schritt der Datenaufbereitung war die
 Transformation der abhängigen Zielvariable <code>num</code>. Im
 Originaldatensatz gibt diese den angiografischen Schweregrad der
@@ -1799,16 +1796,8 @@ Datenstruktur zu gewinnen und erste Hypothesen abzuleiten, wurde eine
 umfassende explorative Datenanalyse (EDA) durchgeführt.</p>
 <p>Zunächst wurden die kategorialen Variablen mittels Kreuztabellen und
 Pearson-Chi-Quadrat-Tests auf ihre stochastische Unabhängigkeit geprüft.
-Hierbei zeigte sich ein hochsignifikanter Zusammenhang beim
-Brustschmerztyp (<code>cp</code>, p &lt; 0.001) und beim Geschlecht
-(<code>sex</code>, p &lt; 0.001).</p>
-<p>Für die kontinuierlichen Variablen wurden Varianzanalysen (ANOVA)
-durchgeführt. Die Ergebnisse belegen, dass sich erkrankte Patienten
-hinsichtlich ihres höheren Alters (<code>age</code>, p &lt; 0.001),
-eines höheren Ruheblutdrucks (<code>trestbps</code>, p = 0.008) und
-insbesondere einer deutlich niedrigeren maximal erreichten Herzfrequenz
-(<code>thalach</code>, p &lt; 0.001) signifikant von der gesunden Gruppe
-unterscheiden.</p>
+Für die kontinuierlichen Variablen wurden Varianzanalysen (ANOVA)
+durchgeführt.</p>
 <p>Abschliessend wurde eine Korrelationsmatrix aller numerischen
 Variablen erstellt, um potenzielle Multikollinearität zu prüfen. Die
 Inspektion der Matrix zeigt, dass die Korrelationen zwischen den
@@ -1966,6 +1955,13 @@ methodisch legitimiert.</p>
 <div id="statistische-modellierung" class="section level1" number="4">
 <h1><span class="header-section-number">4</span> Statistische
 Modellierung</h1>
+<pre class="r"><code>set.seed(42)
+train_index &lt;- sample(seq_len(nrow(df_modell)), size = 0.7 * nrow(df_modell))
+train_data  &lt;- df_modell[train_index, ]
+test_data   &lt;- df_modell[-train_index, ]</code></pre>
+<pre class="r"><code># vorab für inline-R
+modell_voll      &lt;- glm(target ~ ., data = train_data, family = &quot;binomial&quot;)
+modell_optimiert &lt;- step(modell_voll, direction = &quot;backward&quot;, trace = 0)</code></pre>
 <p>Da die Zielvariable <code>target</code> nur zwei Ausprägungen hat
 (KHK vorhanden oder nicht), wird als Kernverfahren die logistische
 Regression eingesetzt. Das Verfahren schätzt für jeden Patienten eine
@@ -1995,10 +1991,10 @@ Prädiktoren. Durch diese Reduktion sank der AIC-Wert deutlich auf
 <p>Im dritten Schritt wurde ein reduziertes Modell entwickelt, das
 ausschliesslich sechs nicht-invasive Parameter erfasst. Als non-invasiv
 gelten dabei Messungen, die ohne körperlichen Eingriff, Kontrastmittel
-oder apparative Spezialdiagnostik durchführbar sind – konkret Werte, die
-in einer Hausarztpraxis routinemässig erhoben werden. Die
-Variablenauswahl folgt primär einer klinisch-praktischen Logik mit Fokus
-auf niedrigschwellige Einsetzbarkeit.</p>
+oder apparative Spezialdiagnostik durchführbar sind. Konkret handelt es
+sich um Werte, die in einer Hausarztpraxis routinemässig erhoben werden.
+Die Variablenauswahl folgt primär einer klinisch-praktischen Logik mit
+Fokus auf eine einfache Einsetzbarkeit.</p>
 <div id="basismodell-13-variablen" class="section level2" number="4.1">
 <h2><span class="header-section-number">4.1</span> Basismodell (13
 Variablen)</h2>
@@ -2036,11 +2032,11 @@ dimensionsreduziert.</p>
 <p>Zur Reduktion der Modellkomplexität und zur Vermeidung von
 Overfitting wurde eine automatische Rückwärts-Selektion (Backward
 Stepwise Selection) durchgeführt. Als Optimierungskriterium diente das
-Akaike-Informationskriterium (AIC). Der Algorithmus eliminierte iterativ
-in vier Schritten die Variablen Alter (<code>age</code>), ST-Senkung
-(<code>oldpeak</code>), Serumcholesterin (<code>chol</code>) und
-Ruhe-EKG (<code>restecg</code>), da ihr jeweiliger Ausschluss den
-globalen AIC-Wert sukzessive verbesserte.</p>
+Akaike-Informationskriterium (AIC) (Cavanaugh &amp; Neath, 2025). Der
+Algorithmus eliminierte iterativ in vier Schritten die Variablen Alter
+(<code>age</code>), ST-Senkung (<code>oldpeak</code>), Serumcholesterin
+(<code>chol</code>) und Ruhe-EKG (<code>restecg</code>), da ihr
+jeweiliger Ausschluss den globalen AIC-Wert sukzessive verbesserte.</p>
 <p><strong>Evaluation des reduzierten Modells</strong></p>
 <p>Das resultierende, optimierte Regressionsmodell umfasst noch neun
 unabhängige Prädiktoren. Durch die Variablenreduktion sank der AIC-Wert
@@ -2205,6 +2201,15 @@ Risikopatienten liegt.</p>
 <div id="robustheitsprüfung-und-modellvergleich" class="section level1" number="6">
 <h1><span class="header-section-number">6</span> Robustheitsprüfung und
 Modellvergleich</h1>
+<pre class="r"><code>train_kontrolle &lt;- trainControl(method = &quot;cv&quot;, number = 10)
+set.seed(42)
+cv_logreg &lt;- train(target ~ sex + cp + trestbps + fbs + thalach + exang + slope + ca + thal,
+                   data = df_modell, method = &quot;glm&quot;, family = &quot;binomial&quot;, trControl = train_kontrolle)
+set.seed(42)
+cv_rf &lt;- train(target ~ sex + cp + trestbps + fbs + thalach + exang + slope + ca + thal,
+               data = df_modell, method = &quot;rf&quot;,
+               tuneGrid = data.frame(mtry = c(2, 3, 5)),
+               trControl = train_kontrolle)</code></pre>
 <p>Die Evaluation am fixen Testset liefert eine erste Schätzung der
 Modellgüte. Um auszuschliessen, dass diese Ergebnisse von der
 spezifischen Datenaufteilung abhängen, wird das Modell nachfolgend einer
@@ -2284,6 +2289,22 @@ verwendet werden (Vrints et al., 2024).</p>
 <div id="entwicklung-des-gatekeeper-modells" class="section level2" number="7.1">
 <h2><span class="header-section-number">7.1</span> Entwicklung des
 Gatekeeper-Modells</h2>
+<pre class="r"><code>df_screening &lt;- df_modell %&gt;% select(target, age, sex, cp, trestbps, chol, fbs)
+# gleicher Index, da df_screening nur Spalten-Subset von df_modell
+train_data_scr &lt;- df_screening[train_index, ]
+test_data_scr  &lt;- df_screening[-train_index, ]
+modell_screening      &lt;- glm(target ~ ., data = train_data_scr, family = &quot;binomial&quot;)
+wahrscheinlichkeiten_scr &lt;- predict(modell_screening, newdata = test_data_scr, type = &quot;response&quot;)
+vorhersagen_fakt_scr  &lt;- factor(ifelse(wahrscheinlichkeiten_scr &gt; 0.15, &quot;1&quot;, &quot;0&quot;),
+                                levels = levels(test_data_scr$target))
+matrix_screening &lt;- confusionMatrix(data = vorhersagen_fakt_scr,
+                                    reference = test_data_scr$target, positive = &quot;1&quot;)
+esc_triage &lt;- cut(wahrscheinlichkeiten_scr,
+                  breaks = c(-Inf, 0.15, 0.85, Inf),
+                  labels = c(&quot;1. Niedrig (&lt;15%): Keine Tests&quot;,
+                             &quot;2. Mittel (15-85%): Bildgebung&quot;,
+                             &quot;3. Hoch (&gt;85%): Herzkatheter&quot;))
+triage_ergebnisse &lt;- table(Vorhersage = esc_triage, Tatsaechliche_Diagnose = test_data_scr$target)</code></pre>
 <p>Es wurde ein stark reduziertes logistisches Regressionsmodell
 trainiert, das sich ausschliesslich auf sechs non-invasive
 Basisparameter fokussiert: Alter (<code>age</code>), Geschlecht
@@ -2591,6 +2612,49 @@ bereits detektieren, noch bevor der Patient aufgrund akuter
 Brustschmerzen den Arzt aufsucht. Die Kombination aus interpretierbaren
 statistischen Verfahren und modernen Sensordaten stellt einen
 vielversprechenden Pfad für die präventive Kardiologie dar.</p>
+</div>
+<div id="benutzung-von-generativer-künstlicher-intelligenz-ki" class="section level2" number="9.4">
+<h2><span class="header-section-number">9.4</span> Benutzung von
+generativer künstlicher Intelligenz (KI)</h2>
+<p>Bei der Erstellung dieser Arbeit wurden generative KI-Tools, darunter
+Claude (Anthropic), Gemini und ChatGPT als unterstützende Hilfsmittel
+eingesetzt. Die KI-Assistenz umfang folgende Bereiche: sprachliche
+Formulierung und Überarbeitung von Textabschnitten, strukturelles
+Feedback zum Aufbau des Berichts, Verbesserungen des Codes sowie die
+Vorbereitung von Präsentationsinhalten. Wir haben alle KI-generierten
+Ergebnisse geprüft, bearbeitet und validiert und tragen die volle
+Verantwortung für den endgültigen Inhalt.</p>
+</div>
+<div id="literaturverzeichnis" class="section level2" number="9.5">
+<h2><span class="header-section-number">9.5</span>
+Literaturverzeichnis</h2>
+<p>Altman, D. G., &amp; Bland, J. M. (1994). Statistics Notes:
+Diagnostic tests 1: sensitivity and specificity. BMJ, 308(6943), 1552.
+<a href="https://doi.org/10.1136/bmj.308.6943.1552" class="uri">https://doi.org/10.1136/bmj.308.6943.1552</a></p>
+<p>Andras Janosi, W. S. (1989). Heart Disease [Dataset]. UCI Machine
+Learning Repository. <a href="https://doi.org/10.24432/C52P4X" class="uri">https://doi.org/10.24432/C52P4X</a></p>
+<p>Cavanaugh, J. E., &amp; Neath, A. A. (2025). Akaike Information
+Criterion, The: Background, Derivation, Properties, and Refinements. In
+International Encyclopedia of Statistical Science (S. 35–41). Springer,
+Berlin, Heidelberg. <a href="https://doi.org/10.1007/978-3-662-69359-9_685" class="uri">https://doi.org/10.1007/978-3-662-69359-9_685</a></p>
+<p>D’Agostino, R. B., Vasan, R. S., Pencina, M. J., Wolf, P. A., Cobain,
+M., Massaro, J. M., &amp; Kannel, W. B. (2008). General Cardiovascular
+Risk Profile for Use in Primary Care. Circulation, 117(6). <a href="https://www.ahajournals.org/doi/10.1161/CIRCULATIONAHA.107.699579" class="uri">https://www.ahajournals.org/doi/10.1161/CIRCULATIONAHA.107.699579</a></p>
+<p>Kuhn, M. (2019). 5 Model Training and Tuning | The caret Package. <a href="https://topepo.github.io/caret/model-training-and-tuning.html" class="uri">https://topepo.github.io/caret/model-training-and-tuning.html</a></p>
+<p>Nagavelli, U., Samanta, D., &amp; Chakraborty, P. (2022). Machine
+Learning Technology-Based Heart Disease Detection Models. Journal of
+Healthcare Engineering, 2022(1), 7351061. <a href="https://doi.org/10.1155/2022/7351061" class="uri">https://doi.org/10.1155/2022/7351061</a></p>
+<p>Vrints, C., Andreotti, F., Koskinas, K. C., Rossello, X., Adamo, M.,
+Ainslie, J., Banning, A. P., Budaj, A., Buechel, R. R., Chiariello, G.
+A., Chieffo, A., Christodorescu, R. M., Deaton, C., Doenst, T., Jones,
+H. W., Kunadian, V., Mehilli, J., Milojevic, M., Piek, J. J., … ESC
+Scientific Document Group. (2024). 2024 ESC Guidelines for the
+management of chronic coronary syndromes: Developed by the task force
+for the management of chronic coronary syndromes of the European Society
+of Cardiology (ESC) Endorsed by the European Association for
+Cardio-Thoracic Surgery (EACTS). European Heart Journal, 45(36),
+3415–3537. <a href="https://doi.org/10.1093/eurheartj/ehae177" class="uri">https://doi.org/10.1093/eurheartj/ehae177</a></p>
+<p>World Health Organisation. (2021). The top 10 causes of death. <a href="https://www.who.int/news-room/fact-" class="uri">https://www.who.int/news-room/fact-</a></p>
 </div>
 </div>
 

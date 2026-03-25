@@ -475,17 +475,17 @@ ui <- fluidPage(
   titlePanel("KHK-Screening-Tool"),
   sidebarLayout(
     sidebarPanel(
-      numericInput("age", "Alter:", value = 50, min = 20, max = 100),
+      sliderInput("age", "Alter (Jahre):", min = 18, max = 99, value = 50, step = 1, width = "100%"),
       selectInput("sex", "Geschlecht:", choices = list("Weiblich" = 0, "Männlich" = 1)),
-      selectInput("cp", "Brustschmerztyp:", 
-                  choices = list("1: Typische Angina" = 1, 
-                                 "2: Atypische Angina" = 2, 
-                                 "3: Nicht-anginöser Schmerz" = 3, 
-                                 "4: Asymptomatisch" = 4), 
+      selectInput("cp", "Brustschmerztyp:",
+                  choices = list("1: Typische Angina" = 1,
+                                 "2: Atypische Angina" = 2,
+                                 "3: Nicht-anginöser Schmerz" = 3,
+                                 "4: Asymptomatisch" = 4),
                   selected = 1),
-      sliderInput("trestbps", "Ruheblutdruck:", min = 90, max = 200, value = 120),
-      sliderInput("chol", "Cholesterin:", min = 100, max = 400, value = 200),
-      selectInput("fbs", "Blutzucker > 120 mg/dl:", choices = list("Nein" = 0, "Ja" = 1))
+      sliderInput("trestbps", "Ruheblutdruck (mm Hg):", min = 80, max = 220, value = 120, step = 1),
+      sliderInput("chol", "Serumcholesterin (mg/dl):", min = 100, max = 600, value = 200, step = 1),
+      selectInput("fbs", "Nüchternblutzucker > 120 mg/dl:", choices = list("Nein" = 0, "Ja" = 1))
     ),
     mainPanel(
       h3("Ergebnis nach ESC-Guidelines"),
