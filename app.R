@@ -9,7 +9,7 @@ ui <- fluidPage(
   titlePanel("KHK-Screening-Tool"),
   sidebarLayout(
     sidebarPanel(
-      sliderInput("age", "Alter (Jahre):", min = 18, max = 100, value = 50, step = 1),
+      sliderInput("age", "Alter (Jahre):", min = 18, max = 99, value = 50, step = 1, width = "100%"),
       selectInput("sex", "Geschlecht:", choices = list("Weiblich" = 0, "Männlich" = 1)),
       selectInput("cp", "Brustschmerztyp:",
                   choices = list("1: Typische Angina" = 1,
